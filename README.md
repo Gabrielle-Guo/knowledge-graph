@@ -6,7 +6,7 @@ An editable version of the knowledge graph from RGC proposal 27628327, *Form-Fin
 - Eight adjusted prototypes open into **32 In-Between States**.
 - Each In-Between State is materialised as one representative **built case**. All 78 collected cases are included, either as the representative or as an alternate that can be swapped in.
 
-**Open it:** `https://starive.github.io/knowledge-graph/`. The address works once GitHub Pages is switched on for this repository.
+**Open it:** https://gabrielle-guo.github.io/knowledge-graph/   The address works once GitHub Pages is switched on for this repository.
 
 ## What's here
 
