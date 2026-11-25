@@ -23,6 +23,7 @@ An editable version of the knowledge graph from RGC proposal 27628327, *Form-Fin
 ## Reviewing the graph
 
 - Click any circle or link to see its details.
+- Each circle also has a **form and force diagram** you can draft yourself: select it, then click **Draw** in the side panel. The drawing board has compression, tension, load and support tools, an equilibrium check and transformation commands.
 - Photos picked by *Wikimedia Commons search* in `CREDITS.md` were chosen automatically, so check them before use.
 - To change a photo, edit its entry in `photos/sources.json` (a Commons file name or a search). The **Fetch case photos** action then runs again.
 - Edits made in the browser stay in that browser. Use **Export → JSON** to share a changed layout.

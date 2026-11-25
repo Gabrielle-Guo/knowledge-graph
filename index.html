@@ -113,8 +113,58 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .trow img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; max-width: none; }
 .trow .fname { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
 .tcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 8px; font-size: 13.5px; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); z-index: 20; }
+
+/* form and force diagram tiles in the side panel */
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile { position: relative; border: 1px solid var(--line); border-radius: 8px; background: #ffffff; aspect-ratio: 4 / 3; overflow: hidden; max-width: 100%; }
+.tile > svg, .tile > img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.tile .tlabel { position: absolute; left: 8px; top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: #5a6370; font-weight: 600; background: rgba(255, 255, 255, .85); padding: 1px 5px; border-radius: 4px; pointer-events: none; }
+.tile .badge { position: absolute; right: 6px; top: 6px; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; pointer-events: none; }
+.badge.ok { background: #e3f4ea; color: #1e7a4c; }
+.badge.bad { background: #fbeedd; color: #9a5608; }
+.badge.mid { background: #eef0f3; color: #4c5561; }
+.tile .open { position: absolute; inset: 0; border: 0; background: transparent; border-radius: 0; cursor: pointer; }
+.tile .open:hover { background: rgba(90, 68, 200, .06); }
+.tile .empty { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; padding: 10px; text-align: center; }
+.tile .empty p { margin: 0; color: #5a6370; font-size: 12.5px; }
+.tile .empty button { background: #f3f5f8; color: #1a1e24; border-color: #d4d9e0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* drawing board */
+.ed { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ed-bar { background: var(--surface); border-bottom: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 8px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.ed-title { font-weight: 600; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.ed-title small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.ed-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr) 320px; }
+.tools { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; padding: 8px 6px; overflow-y: auto; padding-left: max(6px, env(safe-area-inset-left, 0px)); }
+.tools button { flex-direction: column; gap: 2px; padding: 6px 2px; font-size: 10.5px; min-height: 48px; width: 100%; }
+.tools button svg { width: 22px; height: 22px; }
+.board-wrap { position: relative; min-width: 0; min-height: 0; padding: 14px; display: flex; }
+#edc { flex: 1; width: 100%; height: 100%; background: #ffffff; border: 1px solid var(--line); border-radius: 8px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ed-hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: var(--surface); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; pointer-events: none; max-width: calc(100% - 40px); text-align: center; }
+.ed-side { background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; padding: 14px max(14px, env(safe-area-inset-right, 0px)) 24px 14px; display: flex; flex-direction: column; gap: 16px; }
+.ed-side .sec { display: flex; flex-direction: column; gap: 8px; }
+.ed-side .sec + .sec { border-top: 1px solid var(--line); padding-top: 14px; }
+.ed-side h3 { font-size: 12px; margin: 0; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); font-weight: 600; }
+.cmdgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cmdgrid button { white-space: normal; text-align: left; justify-content: flex-start; font-size: 12.5px; }
+.inline { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 6px; align-items: center; }
+.result { border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+.result.ok { background: color-mix(in srgb, var(--ok) 14%, var(--surface)); }
+.result.bad { background: color-mix(in srgb, var(--warn) 16%, var(--surface)); }
+.result.mid { background: var(--surface-2); }
+.result b { display: block; margin-bottom: 2px; }
+.flist { font-family: var(--f-mono); font-size: 12px; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; }
+.legend-k { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-2); }
+.legend-k span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-k i { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 8px; font-size: 13.5px; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); z-index: 50; }
 @media (max-width: 820px) {
+  .ed { overflow-y: auto; }
+  .ed-body { display: flex; flex-direction: column; }
+  .tools { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; padding: 6px max(10px, env(safe-area-inset-left, 0px)); }
+  .tools button { width: 62px; flex: none; }
+  .board-wrap { height: 62vh; flex: none; }
+  .ed-side { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
   html, body, #root { height: auto; }
   main { display: block; }
   .stage { height: 62vh; }
@@ -169,6 +219,27 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     </div>
     <aside class="panel" id="panel" aria-label="Inspector"></aside>
   </main>
+  <div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="ed-title">
+    <div class="ed-bar">
+      <div class="ed-title" id="ed-title">Form diagram</div>
+      <div class="grp">
+        <button id="e-undo" data-ed="undo" disabled>Undo</button>
+        <button id="e-redo" data-ed="redo" disabled>Redo</button>
+      </div>
+      <div class="legend-k" aria-hidden="true"><span><i style="background:#2f6fd6"></i>Compression</span><span><i style="background:#c8323a"></i>Tension</span><span><i style="background:#22a05a"></i>Load</span></div>
+      <span style="margin-left:auto"></span>
+      <button data-ed="cancel">Cancel</button>
+      <button class="primary" data-ed="done">Done</button>
+    </div>
+    <div class="ed-body">
+      <div class="tools" id="tools" role="toolbar" aria-label="Drawing tools"></div>
+      <div class="board-wrap">
+        <svg id="edc" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" aria-label="Drawing board"></svg>
+        <div class="ed-hint" id="ed-hint"></div>
+      </div>
+      <div class="ed-side" id="ed-side"></div>
+    </div>
+  </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </div>
 <script type="application/json" id="graph-data">{"v":1,"savedAt":"","board":{"w":2180,"h":1460},"legend":{"x":1905,"y":330,"show":true},"opts":{"captions":true,"snap":false,"pngScale":2},"nodes":[{"id":"CB","t":"adj","x":634,"y":857,"r":40,"glyph":"CB","label":"Cable"},{"id":"PC","t":"adj","x":682,"y":985,"r":40,"glyph":"PC","label":"Parabolic\nCable"},{"id":"CT","t":"adj","x":884,"y":970,"r":40,"glyph":"CT","label":"Gable\ntruss"},{"id":"PA","t":"adj","x":1297,"y":808,"r":40,"glyph":"PA","label":"Parabolic\nArch"},{"id":"AR","t":"adj","x":1168,"y":594,"r":40,"glyph":"AR","label":"Arch"},{"id":"FR","t":"adj","x":983,"y":431,"r":40,"glyph":"FR","label":"Frame"},{"id":"TR","t":"adj","x":753,"y":519,"r":40,"glyph":"TR","label":"Truss"},{"id":"BM","t":"adj","x":634,"y":603,"r":40,"glyph":"BM","label":"Beams"},{"id":"AC","t":"core","x":905,"y":730,"r":58,"glyph":"AC","label":"Arch-cable"},{"id":"TC","t":"orig","x":579,"y":778,"r":42,"glyph":"TC","label":"Triangular\nCable"},{"id":"TA","t":"orig","x":579,"y":682,"r":42,"glyph":"TA","label":"Triangular\nArch"},{"id":"ib1","t":"ib","x":337,"y":511,"r":35,"glyph":"nng","label":"Beam grillage","cap":false},{"id":"cs1","t":"case","x":147,"y":438,"r":49,"label":"Neue\nNational-\ngalerie","name":"Neue Nationalgalerie","year":"1968","meta":"Berlin · 1968 · Mies van der Rohe","alts":[{"name":"Farnsworth House","year":"1951","meta":"Plano, Illinois · 1951 · Mies van der Rohe"},{"name":"Kimbell Art Museum","year":"1972","meta":"Fort Worth · 1972 · Louis Kahn, August Komendant"},{"name":"Confederation Bridge","year":"1997","meta":"Canada · 1997"},{"name":"Hong Kong–Zhuhai–Macau Bridge","year":"2018","meta":"Pearl River Delta · 2018"}]},{"id":"ib2","t":"ib","x":395,"y":441,"r":35,"glyph":"pudong","label":"Beam string","cap":false},{"id":"cs2","t":"case","x":225,"y":345,"r":49,"label":"Shanghai\nPudong\nAirport T1","name":"Shanghai Pudong Airport T1","year":"1999","meta":"Shanghai · 1999 · Paul Andreu","alts":[]},{"id":"ib3","t":"ib","x":468,"y":380,"r":35,"glyph":"bio","label":"Spatial truss dome","cap":false},{"id":"cs3","t":"case","x":323,"y":263,"r":49,"label":"Montreal\nBiosphère","name":"Montreal Biosphère","year":"1967","meta":"Montreal · 1967 · R. Buckminster Fuller","alts":[{"name":"Eden Project biomes","year":"2001","meta":"Cornwall · 2001 · Grimshaw, Anthony Hunt Associates"},{"name":"Javits Center","year":"1986","meta":"New York · 1986 · I. M. Pei & Partners"},{"name":"Spaceship Earth","year":"1982","meta":"Florida · 1982 · Epcot"},{"name":"Beijing National Stadium","year":"2008","meta":"Beijing · 2008 · Herzog & de Meuron, Arup, CAG"}]},{"id":"ib4","t":"ib","x":555,"y":329,"r":35,"glyph":"eiffel","label":"Tapered truss tower","cap":false},{"id":"cs4","t":"case","x":438,"y":195,"r":49,"label":"Eiffel\nTower","name":"Eiffel Tower","year":"1889","meta":"Paris · 1889 · Gustave Eiffel, Koechlin & Nouguier","alts":[{"name":"Forth Bridge","year":"1890","meta":"Scotland · 1890 · Fowler & Baker"},{"name":"Quebec Bridge","year":"1917","meta":"Quebec City · 1917"},{"name":"Centre Pompidou","year":"1977","meta":"Paris · 1977 · Piano & Rogers, Arup"}]},{"id":"ib5","t":"ib","x":651,"y":290,"r":35,"glyph":"gherkin","label":"Diagrid","cap":false},{"id":"cs5","t":"case","x":567,"y":143,"r":49,"label":"30 St\nMary Axe","name":"30 St Mary Axe","year":"2004","meta":"London · 2004 · Foster + Partners, Arup","alts":[{"name":"Hearst Tower","year":"2006","meta":"New York · 2006 · Foster + Partners"},{"name":"Seattle Central Library","year":"2004","meta":"Seattle · 2004 · OMA"},{"name":"Guangzhou International Finance Center","year":"2010","meta":"Guangzhou · 2010 · Wilkinson Eyre, Arup"},{"name":"Capital Gate","year":"2011","meta":"Abu Dhabi · 2011 · RMJM"}]},{"id":"ib6","t":"ib","x":755,"y":263,"r":35,"glyph":"boc","label":"Space megatruss","cap":false},{"id":"cs6","t":"case","x":705,"y":108,"r":49,"label":"Bank of\nChina Tower","name":"Bank of China Tower","year":"1990","meta":"Hong Kong · 1990 · I. M. Pei, Leslie E. Robertson","alts":[]},{"id":"ib7","t":"ib","x":864,"y":251,"r":35,"glyph":"crown","label":"Portal frame","cap":false},{"id":"cs7","t":"case","x":850,"y":91,"r":49,"label":"S. R.\nCrown Hall","name":"S. R. Crown Hall","year":"1956","meta":"Chicago · 1956 · Mies van der Rohe","alts":[{"name":"Sainsbury Centre","year":"1978","meta":"Norwich · 1978 · Foster Associates, Anthony Hunt"},{"name":"Galerie des machines","year":"1889 (demolished 1910)","meta":"Paris · 1889 (demolished 1910) · Dutert & Contamin"},{"name":"Grande Arche","year":"1989","meta":"La Défense, Paris · 1989 · Johan Otto von Spreckelsen"},{"name":"Lingotto","year":"1923","meta":"Turin · 1923 · Giacomo Mattè-Trucco"}]},{"id":"ib8","t":"ib","x":974,"y":253,"r":35,"glyph":"sendai","label":"Tube-and-plate frame","cap":false},{"id":"cs8","t":"case","x":996,"y":94,"r":49,"label":"Sendai\nMedia-\ntheque","name":"Sendai Mediatheque","year":"2001","meta":"Sendai · 2001 · Toyo Ito, Mutsuro Sasaki","alts":[{"name":"Yamanashi Press and Broadcasting Centre","year":"1966","meta":"Kofu · 1966 · Kenzo Tange"}]},{"id":"ib9","t":"ib","x":1081,"y":269,"r":35,"glyph":"cctv","label":"Looped tube frame","cap":false},{"id":"cs9","t":"case","x":1140,"y":115,"r":49,"label":"CCTV\nHead-\nquarters","name":"CCTV Headquarters","year":"2012","meta":"Beijing · 2012 · OMA, Arup","alts":[]},{"id":"ib10","t":"ib","x":1184,"y":298,"r":35,"glyph":"habitat","label":"Stacked module frame","cap":false},{"id":"cs10","t":"case","x":1277,"y":154,"r":49,"label":"Habitat\n67","name":"Habitat 67","year":"1967","meta":"Montreal · 1967 · Moshe Safdie","alts":[{"name":"The Interlace","year":"2013","meta":"Singapore · 2013 · OMA / Ole Scheeren"},{"name":"Linked Hybrid","year":"2009","meta":"Beijing · 2009 · Steven Holl"}]},{"id":"ib11","t":"ib","x":1278,"y":340,"r":35,"glyph":"gard","label":"Multi-tier arcade","cap":false},{"id":"cs11","t":"case","x":1402,"y":211,"r":49,"label":"Pont\ndu Gard","name":"Pont du Gard","year":"1st c. AD","meta":"Nîmes, France · 1st century AD","alts":[{"name":"Zhaozhou Bridge","year":"c. 605 AD","meta":"Hebei · c. 605 AD · Li Chun"}]},{"id":"ib12","t":"ib","x":1361,"y":394,"r":35,"glyph":"sydney","label":"Trussed arch","cap":false},{"id":"cs12","t":"case","x":1513,"y":282,"r":49,"label":"Sydney\nHarbour\nBridge","name":"Sydney Harbour Bridge","year":"1932","meta":"Sydney · 1932 · Ralph Freeman, Dorman Long","alts":[{"name":"New River Gorge Bridge","year":"1977","meta":"West Virginia · 1977"},{"name":"Chaotianmen Bridge","year":"2009","meta":"Chongqing · 2009"},{"name":"Salginatobel Bridge","year":"1930","meta":"Switzerland · 1930 · Robert Maillart"}]},{"id":"ib13","t":"ib","x":1431,"y":458,"r":35,"glyph":"palaz","label":"Ribbed dome","cap":false},{"id":"cs13","t":"case","x":1606,"y":367,"r":49,"label":"Palazzetto\ndello Sport","name":"Palazzetto dello Sport","year":"1957","meta":"Rome · 1957 · Pier Luigi Nervi","alts":[]},{"id":"ib14","t":"ib","x":1485,"y":530,"r":35,"glyph":"kresge","label":"Thin shell dome","cap":false},{"id":"cs14","t":"case","x":1679,"y":463,"r":49,"label":"Kresge\nAuditorium","name":"Kresge Auditorium","year":"1955","meta":"MIT, Cambridge · 1955 · Eero Saarinen, Ammann & Whitney","alts":[]},{"id":"ib15","t":"ib","x":1522,"y":607,"r":35,"glyph":"mana","label":"Hypar shell","cap":false},{"id":"cs15","t":"case","x":1728,"y":567,"r":49,"label":"Los\nManantiales","name":"Los Manantiales","year":"1958","meta":"Xochimilco, Mexico City · 1958 · Félix Candela","alts":[]},{"id":"ib16","t":"ib","x":1541,"y":689,"r":35,"glyph":"gateway","label":"Catenary arch","cap":false},{"id":"cs16","t":"case","x":1753,"y":675,"r":49,"label":"Gateway\nArch","name":"Gateway Arch","year":"1965","meta":"St. Louis · 1965 · Eero Saarinen, Hannskarl Bandel","alts":[{"name":"Gateshead Millennium Bridge","year":"2001","meta":"Gateshead · 2001 · Wilkinson Eyre, Gifford"}]},{"id":"ib17","t":"ib","x":1541,"y":771,"r":35,"glyph":"mila","label":"Catenary arcade","cap":false},{"id":"cs17","t":"case","x":1753,"y":785,"r":49,"label":"Casa Milà\nattic","name":"Casa Milà attic","year":"1912","meta":"Barcelona · 1912 · Antoni Gaudí","alts":[]},{"id":"ib18","t":"ib","x":1522,"y":853,"r":35,"glyph":"armadillo","label":"Funicular vault","cap":false},{"id":"cs18","t":"case","x":1728,"y":893,"r":49,"label":"Armadillo\nVault","name":"Armadillo Vault","year":"2016","meta":"Venice Biennale · 2016 · Block Research Group, ETH Zürich","alts":[{"name":"Mapungubwe Interpretation Centre","year":"2009","meta":"Limpopo, South Africa · 2009 · Peter Rich, John Ochsendorf, Michael Ramage"},{"name":"Church of Atlántida","year":"1960","meta":"Uruguay · 1960 · Eladio Dieste"}]},{"id":"ib19","t":"ib","x":1485,"y":930,"r":35,"glyph":"sagrada","label":"Branching column","cap":false},{"id":"cs19","t":"case","x":1679,"y":997,"r":49,"label":"Sagrada\nFamília","name":"Sagrada Família","year":"1882–","meta":"Barcelona · 1882–present · Antoni Gaudí","alts":[{"name":"Church of Colònia Güell","year":"1908–14","meta":"Santa Coloma de Cervelló · 1908–14 · Antoni Gaudí"}]},{"id":"ib20","t":"ib","x":1431,"y":1002,"r":35,"glyph":"multi","label":"Funicular gridshell","cap":false},{"id":"cs20","t":"case","x":1606,"y":1093,"r":49,"label":"Multihalle\nMannheim","name":"Multihalle Mannheim","year":"1975","meta":"Mannheim · 1975 · Frei Otto, Carlfried Mutschler, Arup","alts":[]},{"id":"ib21","t":"ib","x":1361,"y":1066,"r":35,"glyph":"infinity","label":"Tied arch","cap":false},{"id":"cs21","t":"case","x":1513,"y":1178,"r":49,"label":"Infinity\nBridge","name":"Infinity Bridge","year":"2009","meta":"Stockton-on-Tees · 2009 · Expedition Engineering","alts":[{"name":"Lupu Bridge","year":"2003","meta":"Shanghai · 2003"},{"name":"Fehmarnsund Bridge","year":"1963","meta":"Germany · 1963"}]},{"id":"ib22","t":"ib","x":1278,"y":1120,"r":35,"glyph":"dorton","label":"Arch-supported net","cap":false},{"id":"cs22","t":"case","x":1402,"y":1249,"r":49,"label":"J. S. Dorton\nArena","name":"J. S. Dorton Arena","year":"1952","meta":"Raleigh · 1952 · Matthew Nowicki, Fred Severud","alts":[{"name":"Ingalls Rink","year":"1958","meta":"Yale, New Haven · 1958 · Eero Saarinen, Fred Severud"}]},{"id":"ib23","t":"ib","x":1184,"y":1162,"r":35,"glyph":"seoul","label":"Cable dome","cap":false},{"id":"cs23","t":"case","x":1277,"y":1306,"r":49,"label":"Seoul Olympic\nGymnastics\nArena","name":"Seoul Olympic Gymnastics Arena","year":"1988","meta":"Seoul · 1988 · David Geiger","alts":[{"name":"Georgia Dome","year":"1992 (demolished 2017)","meta":"Atlanta · 1992 (demolished 2017) · Weidlinger Associates"}]},{"id":"ib24","t":"ib","x":1081,"y":1191,"r":35,"glyph":"needle","label":"Tensegrity tower","cap":false},{"id":"cs24","t":"case","x":1140,"y":1345,"r":49,"label":"Needle\nTower","name":"Needle Tower","year":"1968","meta":"Washington, DC · 1968 · Kenneth Snelson","alts":[{"name":"Kurilpa Bridge","year":"2009","meta":"Brisbane · 2009 · Cox Rayner, Arup"},{"name":"Skylon","year":"1951 (removed 1952)","meta":"London · 1951 (removed 1952) · Powell & Moya, Felix Samuely"}]},{"id":"ib25","t":"ib","x":974,"y":1207,"r":35,"glyph":"utica","label":"Double-cable truss","cap":false},{"id":"cs25","t":"case","x":996,"y":1366,"r":49,"label":"Utica\nMemorial\nAuditorium","name":"Utica Memorial Auditorium","year":"1959","meta":"Utica, NY · 1959 · Lev Zetlin, Gilbert Seltzer","alts":[]},{"id":"ib26","t":"ib","x":864,"y":1209,"r":35,"glyph":"munich","label":"Anticlastic cable net","cap":false},{"id":"cs26","t":"case","x":850,"y":1369,"r":49,"label":"Munich\nOlympic\nStadium","name":"Munich Olympic Stadium","year":"1972","meta":"Munich · 1972 · Behnisch, Frei Otto, Leonhardt + Andrä","alts":[{"name":"National Speed Skating Oval","year":"2021","meta":"Beijing · 2021"}]},{"id":"ib27","t":"ib","x":755,"y":1197,"r":35,"glyph":"spoke","label":"Spoke wheel","cap":false},{"id":"cs27","t":"case","x":705,"y":1352,"r":49,"label":"Gottlieb-\nDaimler\nStadion","name":"Gottlieb-Daimler-Stadion roof","year":"1993","meta":"Stuttgart · 1993 · Schlaich Bergermann","alts":[{"name":"Madison Square Garden","year":"1968","meta":"New York · 1968"}]},{"id":"ib28","t":"ib","x":651,"y":1170,"r":35,"glyph":"gg","label":"Suspension span","cap":false},{"id":"cs28","t":"case","x":567,"y":1317,"r":49,"label":"Golden Gate\nBridge","name":"Golden Gate Bridge","year":"1937","meta":"San Francisco · 1937 · Joseph Strauss, Charles Ellis","alts":[{"name":"Tsing Ma Bridge","year":"1997","meta":"Hong Kong · 1997"},{"name":"Akashi Kaikyō Bridge","year":"1998","meta":"Kobe · 1998"}]},{"id":"ib29","t":"ib","x":555,"y":1131,"r":35,"glyph":"yoyogi","label":"Suspended roof","cap":false},{"id":"cs29","t":"case","x":438,"y":1265,"r":49,"label":"Yoyogi\nNational\nGymnasium","name":"Yoyogi National Gymnasium","year":"1964","meta":"Tokyo · 1964 · Kenzo Tange, Yoshikatsu Tsuboi","alts":[{"name":"Dulles Airport Main Terminal","year":"1962","meta":"Virginia · 1962 · Eero Saarinen, Ammann & Whitney"}]},{"id":"ib30","t":"ib","x":468,"y":1080,"r":35,"glyph":"pav","label":"Hanging canopy","cap":false},{"id":"cs30","t":"case","x":323,"y":1197,"r":49,"label":"Pavilhão\nde Portugal","name":"Pavilhão de Portugal","year":"1998","meta":"Lisbon · 1998 · Álvaro Siza, Segadães Tavares","alts":[]},{"id":"ib31","t":"ib","x":395,"y":1019,"r":35,"glyph":"millau","label":"Cable-stayed fan","cap":false},{"id":"cs31","t":"case","x":225,"y":1115,"r":49,"label":"Millau\nViaduct","name":"Millau Viaduct","year":"2004","meta":"France · 2004 · Michel Virlogeux, Foster + Partners","alts":[{"name":"Puente del Alamillo","year":"1992","meta":"Seville · 1992 · Santiago Calatrava"},{"name":"Stonecutters Bridge","year":"2009","meta":"Hong Kong · 2009"},{"name":"Ting Kau Bridge","year":"1998","meta":"Hong Kong · 1998 · Schlaich Bergermann"},{"name":"Sutong Bridge","year":"2008","meta":"Jiangsu · 2008"},{"name":"Sundial Bridge","year":"2004","meta":"Redding, California · 2004 · Santiago Calatrava"}]},{"id":"ib32","t":"ib","x":337,"y":949,"r":35,"glyph":"hsbc","label":"Hung floors","cap":false},{"id":"cs32","t":"case","x":147,"y":1022,"r":49,"label":"HSBC Main\nBuilding","name":"HSBC Main Building","year":"1985","meta":"Hong Kong · 1985 · Foster Associates, Arup","alts":[]}],"edges":[{"id":"e1","a":"BM","b":"ib1","k":"tr","l":"array grid","ar":"none","bend":0,"lp":0.55},{"id":"e2","a":"ib1","b":"cs1","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e3","a":"BM","b":"ib2","k":"tr","l":"add struts","ar":"none","bend":0,"lp":0.55},{"id":"e4","a":"ib2","b":"cs2","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e5","a":"TR","b":"ib3","k":"tr","l":"rotate radial","ar":"none","bend":0,"lp":0.55},{"id":"e6","a":"ib3","b":"cs3","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e7","a":"TR","b":"ib4","k":"tr","l":"rotate 90° + taper","ar":"none","bend":0,"lp":0.55},{"id":"e8","a":"ib4","b":"cs4","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e9","a":"TR","b":"ib5","k":"tr","l":"rotate 90° + wrap","ar":"none","bend":0,"lp":0.55},{"id":"e10","a":"ib5","b":"cs5","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e11","a":"TR","b":"ib6","k":"tr","l":"array 3D","ar":"none","bend":0,"lp":0.55},{"id":"e12","a":"ib6","b":"cs6","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e13","a":"FR","b":"ib7","k":"tr","l":"array portals","ar":"none","bend":0,"lp":0.55},{"id":"e14","a":"ib7","b":"cs7","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e15","a":"FR","b":"ib8","k":"tr","l":"rotate (tube)","ar":"none","bend":0,"lp":0.55},{"id":"e16","a":"ib8","b":"cs8","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e17","a":"FR","b":"ib9","k":"tr","l":"loop","ar":"none","bend":0,"lp":0.55},{"id":"e18","a":"ib9","b":"cs9","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e19","a":"FR","b":"ib10","k":"tr","l":"stack 3D","ar":"none","bend":0,"lp":0.55},{"id":"e20","a":"ib10","b":"cs10","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e21","a":"AR","b":"ib11","k":"tr","l":"array tiers","ar":"none","bend":0,"lp":0.55},{"id":"e22","a":"ib11","b":"cs11","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e23","a":"AR","b":"ib12","k":"tr","l":"add truss","ar":"none","bend":0,"lp":0.55},{"id":"e24","a":"ib12","b":"cs12","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e25","a":"AR","b":"ib13","k":"tr","l":"rotate radial","ar":"none","bend":0,"lp":0.55},{"id":"e26","a":"ib13","b":"cs13","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e27","a":"AR","b":"ib14","k":"tr","l":"rotate + trim","ar":"none","bend":0,"lp":0.55},{"id":"e28","a":"ib14","b":"cs14","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e29","a":"AR","b":"ib15","k":"tr","l":"rotate (hypar)","ar":"none","bend":0,"lp":0.55},{"id":"e30","a":"ib15","b":"cs15","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e31","a":"PA","b":"ib16","k":"tr","l":"scale (tall)","ar":"none","bend":0,"lp":0.55},{"id":"e32","a":"ib16","b":"cs16","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e33","a":"PA","b":"ib17","k":"tr","l":"array","ar":"none","bend":0,"lp":0.55},{"id":"e34","a":"ib17","b":"cs17","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e35","a":"PA","b":"ib18","k":"tr","l":"translate (surface)","ar":"none","bend":0,"lp":0.55},{"id":"e36","a":"ib18","b":"cs18","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e37","a":"PA","b":"ib19","k":"tr","l":"add branches","ar":"none","bend":0,"lp":0.55},{"id":"e38","a":"ib19","b":"cs19","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e39","a":"PA","b":"ib20","k":"tr","l":"array grid","ar":"none","bend":0,"lp":0.55},{"id":"e40","a":"ib20","b":"cs20","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e41","a":"AC","b":"ib21","k":"tr","l":"array arches","ar":"none","bend":0,"lp":0.55},{"id":"e42","a":"ib21","b":"cs21","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e43","a":"AC","b":"ib22","k":"tr","l":"rotate + net","ar":"none","bend":0,"lp":0.55},{"id":"e44","a":"ib22","b":"cs22","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e45","a":"AC","b":"ib23","k":"tr","l":"radial + split struts","ar":"none","bend":0,"lp":0.55},{"id":"e46","a":"ib23","b":"cs23","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e47","a":"AC","b":"ib24","k":"tr","l":"split struts + stack","ar":"none","bend":0,"lp":0.55},{"id":"e48","a":"ib24","b":"cs24","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e49","a":"CT","b":"ib25","k":"tr","l":"array + prestress","ar":"none","bend":0,"lp":0.55},{"id":"e50","a":"ib25","b":"cs25","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e51","a":"CT","b":"ib26","k":"tr","l":"translate (net)","ar":"none","bend":0,"lp":0.55},{"id":"e52","a":"ib26","b":"cs26","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e53","a":"CT","b":"ib27","k":"tr","l":"rotate radial","ar":"none","bend":0,"lp":0.55},{"id":"e54","a":"ib27","b":"cs27","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e55","a":"PC","b":"ib28","k":"tr","l":"add hangers","ar":"none","bend":0,"lp":0.55},{"id":"e56","a":"ib28","b":"cs28","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e57","a":"PC","b":"ib29","k":"tr","l":"translate (surface)","ar":"none","bend":0,"lp":0.55},{"id":"e58","a":"ib29","b":"cs29","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e59","a":"PC","b":"ib30","k":"tr","l":"extrude","ar":"none","bend":0,"lp":0.55},{"id":"e60","a":"ib30","b":"cs30","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e61","a":"CB","b":"ib31","k":"tr","l":"array stays","ar":"none","bend":0,"lp":0.55},{"id":"e62","a":"ib31","b":"cs31","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e63","a":"CB","b":"ib32","k":"tr","l":"rotate 90° (hang)","ar":"none","bend":0,"lp":0.55},{"id":"e64","a":"ib32","b":"cs32","k":"mat","l":"Materialize","ar":"none","bend":0,"lp":0.5},{"id":"e65","a":"TA","b":"AC","k":"comb","l":"","ar":"none","bend":0,"lp":0.55},{"id":"e66","a":"TC","b":"AC","k":"comb","l":"","ar":"none","bend":0,"lp":0.55},{"id":"e67","a":"AC","b":"BM","k":"tr","l":"scale","ar":"none","bend":0,"lp":0.55},{"id":"e68","a":"AC","b":"TR","k":"tr","l":"stack","ar":"none","bend":0,"lp":0.55},{"id":"e69","a":"TR","b":"FR","k":"tr","l":"fix joints","ar":"none","bend":0,"lp":0.55},{"id":"e70","a":"AC","b":"AR","k":"tr","l":"remove tie","ar":"none","bend":0,"lp":0.55},{"id":"e71","a":"AR","b":"PA","k":"tr","l":"subdivide","ar":"none","bend":0,"lp":0.55},{"id":"e72","a":"AC","b":"CT","k":"tr","l":"mirror","ar":"none","bend":0,"lp":0.55},{"id":"e73","a":"AC","b":"CB","k":"tr","l":"remove arch","ar":"none","bend":0,"lp":0.55},{"id":"e74","a":"CB","b":"PC","k":"tr","l":"subdivide","ar":"none","bend":0,"lp":0.55}]}</script>
@@ -612,6 +683,11 @@ function panelNode(n) {
     <label class="field"><span class="lab">Size <span class="v mono" id="v-r">${n.r}</span></span><input type="range" id="n-r" data-f="r" min="18" max="120" step="1" value="${n.r}"></label>
   </section>
   <section class="sec">
+    <h3>Form and force diagrams</h3>
+    <div class="dgrid">${diagramTile(n, 'form')}${diagramTile(n, 'force')}</div>
+    <p class="note">Draft this circle's strut-and-tie model and its force diagram, or add an image of them. Click a diagram to edit it.</p>
+  </section>
+  <section class="sec">
     <h3>Image</h3>
     <div class="imgrow">
       <div class="thumb">${src ? `<img src="${esc(src)}" alt="">` : 'No image'}</div>
@@ -647,6 +723,11 @@ function panelNode(n) {
   <section class="sec">
     <div class="btnrow"><button data-act="dup">Duplicate</button><button class="danger" data-act="del">Delete circle</button></div>
   </section>`;
+}
+function diagramTile(n, which) {
+  const d = n[which], label = which === 'form' ? 'Form' : 'Force', par = parentOf(n), canCopy = par && hasDrawing(par.node[which]);
+  if (hasDrawing(d)) return `<div class="tile">${thumbSVG(d)}<span class="tlabel">${label}</span>${which === 'form' ? checkBadge(d) : ''}<button class="open" data-act="draw" data-which="${which}" aria-label="Edit the ${label.toLowerCase()} diagram"></button></div>`;
+  return `<div class="tile"><span class="tlabel">${label}</span><div class="empty"><button data-act="draw" data-which="${which}">Draw</button>${canCopy ? `<button data-act="copyparent" data-which="${which}" title="Start from the ${label.toLowerCase()} diagram of ${esc(nodeName(par.node))}">Copy linked</button>` : ''}</div></div>`;
 }
 function panelEdge(e) {
   if (!e) return panelGraph();
@@ -822,6 +903,8 @@ document.getElementById('root').addEventListener('click', ev => {
     case 'arrows': { const v = b.dataset.v; edit(null, () => { state.edges.forEach(x => { x.ar = v; }); state.opts.arrow = v; }); renderEdges(); toast(v === 'none' ? 'Removed arrowheads from every link.' : 'Added an arrowhead to the end of every link.'); break; }
     case 'fit-board': fitBoard(); break;
     case 'tray-drop': { const p = tray.find(x => x.id === b.dataset.pid); if (p) { URL.revokeObjectURL(p.url); tray = tray.filter(x => x !== p); renderPanel(); } break; }
+    case 'draw': if (n) openBoard(n, b.dataset.which); break;
+    case 'copyparent': if (n) { const par = parentOf(n), w = b.dataset.which; if (par) { edit(null, () => { n[w] = clone(par.node[w]); n[w].check = null; }); openBoard(n, w); } } break;
     case 'hide-legend': edit(null, () => { state.legend.show = false; }); renderLegend(); select({}); break;
   }
 });
@@ -917,6 +1000,7 @@ cv.addEventListener('wheel', ev => {
 
 // ---------- keyboard ----------
 document.addEventListener('keydown', ev => {
+  if (!$('ed').hidden) return edKey(ev);
   const tag = (ev.target.tagName || '').toLowerCase();
   if (['input', 'textarea', 'select'].includes(tag) || ev.target.isContentEditable) { if (ev.key === 'Escape') ev.target.blur(); return; }
   const mod = ev.ctrlKey || ev.metaKey;
@@ -1044,6 +1128,7 @@ stage.addEventListener('drop', ev => {
   select({nodes: new Set([id])}); setNodeImage(id, files[0]);
 });
 document.addEventListener('paste', ev => {
+  if (!$('ed').hidden) return;
   const file = ev.clipboardData && [...ev.clipboardData.files].find(f => f.type.startsWith('image/'));
   if (!file) return;
   const n = curNode();
@@ -1121,6 +1206,430 @@ async function save() {
     statusUI(); capsUI();
   }
 }
+
+// SOLVER-START
+// 2D pin-jointed equilibrium. Tension positive. Loads are force vectors at nodes (screen axes: y down).
+// Drawn diagrams are never exact, so a node counts as balanced when what is left over is under 2% of the largest load.
+function solveDiagram(d) {
+  const nodes = d.nodes || [], members = (d.members || []).filter(m => m.k !== 'l'), loads = d.loads || [];
+  if (!members.length) return {status: 'empty'};
+  const idx = {}; nodes.forEach((n, i) => { idx[n.id] = i; });
+  const cols = [];
+  members.forEach(m => { if (idx[m.a] !== undefined && idx[m.b] !== undefined) cols.push({type: 'm', id: m.id, m}); });
+  nodes.forEach(n => { if (n.sup === 'pin') { cols.push({type: 'rx', node: n.id}); cols.push({type: 'ry', node: n.id}); } else if (n.sup === 'roller') cols.push({type: 'ry', node: n.id}); });
+  const R = nodes.length * 2, C = cols.length;
+  const A = Array.from({length: R}, () => new Array(C).fill(0)), b = new Array(R).fill(0);
+  cols.forEach((c, j) => {
+    if (c.type === 'm') {
+      const a = nodes[idx[c.m.a]], z = nodes[idx[c.m.b]];
+      const L = Math.hypot(z.x - a.x, z.y - a.y) || 1, ux = (z.x - a.x) / L, uy = (z.y - a.y) / L;
+      A[2 * idx[a.id]][j] += ux; A[2 * idx[a.id] + 1][j] += uy;
+      A[2 * idx[z.id]][j] -= ux; A[2 * idx[z.id] + 1][j] -= uy;
+    } else if (c.type === 'rx') A[2 * idx[c.node]][j] = 1;
+    else A[2 * idx[c.node] + 1][j] = 1;
+  });
+  let maxLoad = 0;
+  loads.forEach(l => { const i = idx[l.n]; if (i === undefined) return; b[2 * i] -= l.fx; b[2 * i + 1] -= l.fy; maxLoad = Math.max(maxLoad, Math.hypot(l.fx, l.fy)); });
+  // rank of the equilibrium matrix (how many independent equations the members and supports can satisfy)
+  const M = A.map(r => r.slice()); let rank = 0;
+  for (let j = 0; j < C && rank < R; j++) {
+    let p = rank, best = Math.abs(M[rank][j]);
+    for (let i = rank + 1; i < R; i++) if (Math.abs(M[i][j]) > best) { best = Math.abs(M[i][j]); p = i; }
+    if (best < 1e-9) continue;
+    [M[rank], M[p]] = [M[p], M[rank]];
+    for (let i = rank + 1; i < R; i++) { const f = M[i][j] / M[rank][j]; if (f) for (let k = j; k < C; k++) M[i][k] -= f * M[rank][k]; }
+    rank++;
+  }
+  // least squares: (A^T A + eps I) x = A^T b
+  const N = Array.from({length: C}, () => new Array(C + 1).fill(0));
+  for (let i = 0; i < C; i++) { for (let k = i; k < C; k++) { let s = 0; for (let r = 0; r < R; r++) s += A[r][i] * A[r][k]; N[i][k] = s; N[k][i] = s; } let s = 0; for (let r = 0; r < R; r++) s += A[r][i] * b[r]; N[i][C] = s; N[i][i] += 1e-10; }
+  for (let j = 0; j < C; j++) {
+    let p = j; for (let i = j + 1; i < C; i++) if (Math.abs(N[i][j]) > Math.abs(N[p][j])) p = i;
+    [N[j], N[p]] = [N[p], N[j]]; const pv = N[j][j] || 1e-12;
+    for (let k = j; k <= C; k++) N[j][k] /= pv;
+    for (let i = 0; i < C; i++) if (i !== j) { const f = N[i][j]; if (f) for (let k = j; k <= C; k++) N[i][k] -= f * N[j][k]; }
+  }
+  const x = N.map(r => r[C]);
+  const tol = Math.max(1e-9, 0.02 * maxLoad);
+  const resid = {}; let worst = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    let rx = -b[2 * i], ry = -b[2 * i + 1];
+    for (let j = 0; j < C; j++) { rx += A[2 * i][j] * x[j]; ry += A[2 * i + 1][j] * x[j]; }
+    const r = Math.hypot(rx, ry); if (r > tol) resid[nodes[i].id] = r; worst = Math.max(worst, r);
+  }
+  const forces = {}, mismatches = [], fz = Math.max(1e-9, 0.005 * maxLoad);
+  cols.forEach((c, j) => {
+    if (c.type !== 'm') return;
+    let f = x[j]; if (Math.abs(f) < fz) f = 0; forces[c.id] = f;
+    if ((c.m.k === 'c' && f > 0) || (c.m.k === 't' && f < 0)) mismatches.push(c.id);
+  });
+  const reactions = {}; cols.forEach((c, j) => { if (c.type !== 'm') { reactions[c.node] = reactions[c.node] || {x: 0, y: 0}; reactions[c.node][c.type === 'rx' ? 'x' : 'y'] = x[j]; } });
+  const status = worst > tol ? 'unbalanced' : (rank < C ? 'indeterminate' : 'balanced');
+  return {status, forces, reactions, mismatches, resid, rank, unknowns: C, equations: R, redundant: C - rank, worst, tol};
+}
+// SOLVER-END
+
+// ---------- form and force diagrams on circles ----------
+const COL = {c: '#2f6fd6', t: '#c8323a', u: '#8a929c', l: '#22a05a'};
+const LS = 60;
+const clone = o => JSON.parse(JSON.stringify(o));
+const emptyDiagram = () => ({nodes: [], members: [], loads: [], img: null, check: null});
+const imSrc = im => im ? (im.asset ? '/_blob/' + im.asset : im.src) : null;
+const safeSrc = s => (s && (s.startsWith('data:image/') || s.startsWith('/_blob/') || s.startsWith('blob:'))) ? s : '';
+const hasDrawing = d => !!(d && ((d.members && d.members.length) || (d.nodes && d.nodes.length) || d.img));
+const imgError = err => err && err.message === 'type' ? 'Use a PNG, JPG, WebP or GIF image.' : err && err.message === 'large' ? 'That image is too large. Try a smaller one.' : 'This image could not be read. Save it as PNG or JPG and try again.';
+function bounds(d) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  (d.nodes || []).forEach(n => { add(n.x, n.y); if (n.sup) add(n.x, n.y + 22); });
+  const byN = Object.fromEntries((d.nodes || []).map(n => [n.id, n]));
+  (d.loads || []).forEach(l => { const n = byN[l.n]; if (n) add(n.x - l.fx * LS, n.y - l.fy * LS); });
+  if (d.img) { add(d.img.x, d.img.y); add(d.img.x + d.img.w, d.img.y + d.img.h); }
+  if (x0 === Infinity) return {x: 0, y: 0, w: 800, h: 600};
+  return {x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0)};
+}
+function supportGlyph(n) {
+  if (n.sup === 'pin') return `<path d="M${n.x},${n.y + 3} l-9,14 h18 Z" fill="#5b636e"/><path d="M${n.x - 13},${n.y + 19} h26" stroke="#5b636e" stroke-width="2"/>`;
+  if (n.sup === 'roller') return `<path d="M${n.x},${n.y + 3} l-9,12 h18 Z" fill="#5b636e"/><circle cx="${n.x - 5}" cy="${n.y + 19}" r="3" fill="#5b636e"/><circle cx="${n.x + 5}" cy="${n.y + 19}" r="3" fill="#5b636e"/>`;
+  return '';
+}
+function diagramMarkup(d, opt = {}) {
+  const byN = Object.fromEntries((d.nodes || []).map(n => [n.id, n]));
+  const k = opt.k || 1; // stroke scale for thumbnails
+  let s = '';
+  const src = opt.srcOverride !== undefined ? opt.srcOverride : safeSrc(imSrc(d.img));
+  if (d.img && src) s += `<image href="${esc(src)}" x="${r1(d.img.x)}" y="${r1(d.img.y)}" width="${r1(d.img.w)}" height="${r1(d.img.h)}" opacity="${d.img.op ?? 1}" preserveAspectRatio="xMidYMid meet"${opt.live ? ' data-img="1"' : ''}/>`;
+  (d.members || []).forEach(m => {
+    const a = byN[m.a], b = byN[m.b]; if (!a || !b) return;
+    const w = (m.k === 'u' ? 2.4 : 3.6) * k;
+    s += `<line x1="${r1(a.x)}" y1="${r1(a.y)}" x2="${r1(b.x)}" y2="${r1(b.y)}" stroke="${COL[m.k] || COL.u}" stroke-width="${w}" stroke-linecap="round"${m.k === 'u' ? ` stroke-dasharray="${6 * k} ${5 * k}"` : ''}/>`;
+    if (opt.live) s += `<line class="hit" data-m="${m.id}" x1="${r1(a.x)}" y1="${r1(a.y)}" x2="${r1(b.x)}" y2="${r1(b.y)}"/>`;
+  });
+  (d.loads || []).forEach(l => {
+    const n = byN[l.n]; if (!n) return;
+    const tx = n.x - l.fx * LS, ty = n.y - l.fy * LS, L = Math.hypot(n.x - tx, n.y - ty) || 1, ux = (n.x - tx) / L, uy = (n.y - ty) / L;
+    const hx = n.x - ux * 6, hy = n.y - uy * 6, bx = hx - ux * 11, by = hy - uy * 11;
+    s += `<line x1="${r1(tx)}" y1="${r1(ty)}" x2="${r1(bx)}" y2="${r1(by)}" stroke="${COL.l}" stroke-width="${2.6 * k}"/><path d="M${r1(hx)},${r1(hy)} L${r1(bx - uy * 6)},${r1(by + ux * 6)} L${r1(bx + uy * 6)},${r1(by - ux * 6)} Z" fill="${COL.l}"/>`;
+    if (opt.live) s += `<circle class="handle" data-lt="${l.id}" cx="${r1(tx)}" cy="${r1(ty)}" r="7"/><line class="hit" data-l="${l.id}" x1="${r1(tx)}" y1="${r1(ty)}" x2="${r1(n.x)}" y2="${r1(n.y)}"/>`;
+  });
+  (d.nodes || []).forEach(n => {
+    s += supportGlyph(n);
+    s += `<circle cx="${r1(n.x)}" cy="${r1(n.y)}" r="${4.2 * k}" fill="#ffffff" stroke="#2a2e33" stroke-width="${1.6 * k}"${opt.live ? ` data-n="${n.id}"` : ''}/>`;
+  });
+  return s;
+}
+function thumbSVG(d, w = 400, h = 300) {
+  const b = bounds(d), pad = Math.max(24, Math.max(b.w, b.h) * 0.08);
+  let vx = b.x - pad, vy = b.y - pad, vw = b.w + pad * 2, vh = b.h + pad * 2;
+  const ar = w / h; if (vw / vh > ar) { const nh = vw / ar; vy -= (nh - vh) / 2; vh = nh; } else { const nw = vh * ar; vx -= (nw - vw) / 2; vw = nw; }
+  const k = Math.max(1, vw / 600);
+  return `<svg viewBox="${r1(vx)} ${r1(vy)} ${r1(vw)} ${r1(vh)}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="${r1(vx)}" y="${r1(vy)}" width="${r1(vw)}" height="${r1(vh)}" fill="#ffffff"/>${diagramMarkup(d, {k})}</svg>`;
+}
+function checkBadge(d) {
+  if (!d || !d.check) return '';
+  const s = d.check.status, mm = d.check.mismatches || 0;
+  if (s === 'balanced' && !mm) return '<span class="badge ok">Balanced</span>';
+  if (s === 'indeterminate' && !mm) return '<span class="badge mid">Balanced, redundant</span>';
+  if (s === 'unbalanced') return '<span class="badge bad">Not balanced</span>';
+  if (mm) return `<span class="badge bad">${mm} colour${mm > 1 ? 's' : ''} disagree</span>`;
+  return '';
+}
+
+// =================== drawing board ===================
+const ED = {n: null, which: null, d: null, undo: [], redo: [], tool: 'select', pend: null, drag: null, sel: null, check: null, hover: null};
+const TOOLS = [
+  ['select', 'Move', 'V', '<path d="M5 3 L5 19 L9.5 14.5 L12.5 21 L15 20 L12 13.5 L18 13.5 Z" fill="currentColor"/>'],
+  ['node', 'Node', 'N', '<circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>'],
+  ['c', 'Comp.', 'C', '<line x1="4" y1="19" x2="20" y2="5" stroke="#2f6fd6" stroke-width="3.5" stroke-linecap="round"/>'],
+  ['t', 'Tension', 'T', '<line x1="4" y1="19" x2="20" y2="5" stroke="#c8323a" stroke-width="3.5" stroke-linecap="round"/>'],
+  ['u', 'Undecided', 'U', '<line x1="4" y1="19" x2="20" y2="5" stroke="#8a929c" stroke-width="2.6" stroke-dasharray="4 3" stroke-linecap="round"/>'],
+  ['load', 'Load', 'L', '<line x1="12" y1="2" x2="12" y2="15" stroke="#22a05a" stroke-width="2.6"/><path d="M6 13 L12 21 L18 13 Z" fill="#22a05a"/>'],
+  ['lline', 'Load line', 'K', '<line x1="12" y1="3" x2="12" y2="21" stroke="#22a05a" stroke-width="3.5" stroke-linecap="round"/>'],
+  ['support', 'Support', 'S', '<path d="M12 6 L5 17 H19 Z" fill="currentColor"/><path d="M3 20 H21" stroke="currentColor" stroke-width="2"/>'],
+  ['erase', 'Erase', 'E', '<path d="M4 15 L12 7 L19 14 L13 20 H8 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 20 H20" stroke="currentColor" stroke-width="2"/>'],
+  ['image', 'Image', 'I', '<rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 17 L10 11 L14 15 L16 13 L19 17" fill="none" stroke="currentColor" stroke-width="2"/>']
+];
+const HINTS = {select: 'Drag nodes, load arrows or the image. Click a member or load to edit it.', node: 'Click to place a node.', c: 'Click two points to draw a compression member.', t: 'Click two points to draw a tension member.', u: 'Click two points to draw a member whose force you have not decided.', load: 'Click a node to add a load. Drag the arrow’s tail to change its size and direction.', lline: 'Click two points to draw a load line (for force diagrams).', support: 'Click a node to cycle: pin, roller, none.', erase: 'Click a node, member or load to remove it.', image: 'Drag to move the image. Use the panel to scale it or change its opacity.'};
+$('tools').innerHTML = TOOLS.map(([k, l, key, ico]) => `<button data-tool="${k}" aria-pressed="false" title="${l} (${key})"><svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>${l}</button>`).join('');
+$('tools').addEventListener('click', ev => { const b = ev.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
+function setTool(t) { ED.tool = t; ED.pend = null; document.querySelectorAll('#tools [data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t))); $('ed-hint').textContent = HINTS[t]; drawBoard(); }
+
+function parentOf(n) { const e = state.edges.find(x => x.b === n.id); return e && byId[e.a] ? {node: byId[e.a], edge: e} : null; }
+function openBoard(n, which) {
+  ED.n = n; ED.which = which; ED.d = clone(n[which] || emptyDiagram()); ED.undo = []; ED.redo = []; ED.sel = null; ED.check = null; ED.pend = null;
+  ED.d.nodes = ED.d.nodes || []; ED.d.members = ED.d.members || []; ED.d.loads = ED.d.loads || [];
+  $('ed-title').innerHTML = `${which === 'form' ? 'Form diagram' : 'Force diagram'}<small>${esc(nodeName(n))} · ${esc(TYPE_NAME[n.t])}</small>`;
+  $('ed').hidden = false; document.body.style.overflow = 'hidden';
+  setTool(hasDrawing(ED.d) ? 'select' : (which === 'force' ? 'lline' : 'c'));
+  edHist(); renderEdSide();
+  setTimeout(() => { const b = document.querySelector('#tools [aria-pressed="true"]'); if (b) b.focus(); }, 0);
+}
+function closeBoard(keep) {
+  if (keep && ED.n) { const n = ED.n, which = ED.which, d = ED.d; edit(null, () => { n[which] = d; }); }
+  $('ed').hidden = true; document.body.style.overflow = ''; ED.n = null; renderPanel();
+}
+const edSnap = () => JSON.stringify(ED.d);
+function edPush() { ED.undo.push(edSnap()); if (ED.undo.length > 80) ED.undo.shift(); ED.redo.length = 0; ED.d.check = null; ED.check = null; edHist(); }
+function edHist() { $('e-undo').disabled = !ED.undo.length; $('e-redo').disabled = !ED.redo.length; }
+function edUndo() { if (!ED.undo.length) return; ED.redo.push(edSnap()); ED.d = JSON.parse(ED.undo.pop()); ED.sel = null; ED.check = null; edHist(); drawBoard(); renderEdSide(); }
+function edRedo() { if (!ED.redo.length) return; ED.undo.push(edSnap()); ED.d = JSON.parse(ED.redo.pop()); ED.sel = null; ED.check = null; edHist(); drawBoard(); renderEdSide(); }
+
+const edc = $('edc');
+function drawBoard() {
+  const d = ED.d; if (!d) return;
+  let g = '<defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0 H0 V20" fill="none" stroke="#eef0f3" stroke-width="1"/></pattern><pattern id="grid5" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0 H0 V100" fill="none" stroke="#dde1e6" stroke-width="1"/></pattern></defs>';
+  g += '<rect width="800" height="600" fill="#ffffff"/><rect width="800" height="600" fill="url(#grid)"/><rect width="800" height="600" fill="url(#grid5)"/>';
+  g += '<style>#edc .hit{stroke:transparent;stroke-width:16;cursor:pointer}#edc .handle{fill:#ffffff;stroke:#22a05a;stroke-width:2;cursor:move}#edc [data-n]{cursor:pointer}#edc .selm{stroke:#5a44c8;stroke-width:10;stroke-opacity:.25;stroke-linecap:round}#edc .flab{font:600 12px "IBM Plex Mono",monospace}#edc .mm{stroke:#c7771f;stroke-width:3;stroke-dasharray:5 4;fill:none}</style>';
+  g += diagramMarkup(d, {live: true});
+  const byN = Object.fromEntries(d.nodes.map(n => [n.id, n]));
+  // selection
+  if (ED.sel) {
+    if (ED.sel.t === 'm') { const m = d.members.find(x => x.id === ED.sel.id), a = m && byN[m.a], b = m && byN[m.b]; if (a && b) g += `<line class="selm" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" pointer-events="none"/>`; }
+    if (ED.sel.t === 'n') { const n = byN[ED.sel.id]; if (n) g += `<circle cx="${n.x}" cy="${n.y}" r="11" fill="none" stroke="#5a44c8" stroke-width="2.5" pointer-events="none"/>`; }
+    if (ED.sel.t === 'l') { const l = d.loads.find(x => x.id === ED.sel.id), n = l && byN[l.n]; if (n) g += `<circle cx="${n.x - l.fx * LS}" cy="${n.y - l.fy * LS}" r="12" fill="none" stroke="#5a44c8" stroke-width="2.5" pointer-events="none"/>`; }
+  }
+  // check overlay
+  if (ED.check && ED.check.forces) {
+    const ch = ED.check;
+    d.members.forEach(m => {
+      if (!(m.id in ch.forces)) return; const a = byN[m.a], b = byN[m.b]; if (!a || !b) return;
+      const f = ch.forces[m.id], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, txt = f === 0 ? '0' : (f < 0 ? 'C ' : 'T ') + Math.abs(f).toFixed(2), w = txt.length * 7.6 + 10;
+      if (ch.mismatches.includes(m.id)) g += `<line class="mm" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" pointer-events="none"/>`;
+      g += `<g pointer-events="none"><rect x="${mx - w / 2}" y="${my - 10}" width="${w}" height="19" rx="9" fill="#ffffff" stroke="${f < 0 ? COL.c : f > 0 ? COL.t : '#8a929c'}"/><text class="flab" x="${mx}" y="${my + 4}" text-anchor="middle" fill="${f < 0 ? COL.c : f > 0 ? COL.t : '#5a6370'}">${txt}</text></g>`;
+    });
+    Object.keys(ch.resid || {}).forEach(id => { const n = byN[id]; if (n) g += `<circle cx="${n.x}" cy="${n.y}" r="14" fill="#c7771f" fill-opacity=".18" stroke="#c7771f" stroke-width="2" pointer-events="none"/>`; });
+  }
+  // pending member
+  if (ED.pend && ED.hover) g += `<line x1="${ED.pend.x}" y1="${ED.pend.y}" x2="${ED.hover.x}" y2="${ED.hover.y}" stroke="${COL[ED.tool === 'lline' ? 'l' : ED.tool] || '#5a44c8'}" stroke-width="3" stroke-dasharray="6 5" pointer-events="none"/><circle cx="${ED.pend.x}" cy="${ED.pend.y}" r="7" fill="none" stroke="#5a44c8" stroke-width="2" pointer-events="none"/>`;
+  if (!hasDrawing(d)) g += `<text x="400" y="290" text-anchor="middle" font-size="16" fill="#8a929c" pointer-events="none">${ED.which === 'force' ? 'Draw the force diagram with load lines and members, or add an image' : 'Draw members between points, then add loads and supports, or add an image'}</text>`;
+  edc.innerHTML = g;
+}
+const toBoard = ev => { const p = edc.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; const m = edc.getScreenCTM(); const q = p.matrixTransform(m.inverse()); return {x: q.x, y: q.y}; };
+const snapP = p => ({x: Math.round(p.x / 10) * 10, y: Math.round(p.y / 10) * 10});
+function nodeNear(p, r = 13) { let best = null, bd = r; ED.d.nodes.forEach(n => { const dd = Math.hypot(n.x - p.x, n.y - p.y); if (dd < bd) { bd = dd; best = n; } }); return best; }
+function nodeAtOrNew(p) { const n = nodeNear(p); if (n) return n; const q = snapP(p); const nn = {id: uid('n'), x: q.x, y: q.y, sup: null}; ED.d.nodes.push(nn); return nn; }
+edc.addEventListener('pointermove', ev => {
+  const p = toBoard(ev); ED.hover = nodeNear(p) || snapP(p);
+  if (ED.drag) {
+    const dr = ED.drag, dx = p.x - dr.p.x, dy = p.y - dr.p.y;
+    if (!dr.moved && Math.hypot(dx, dy) < 2) return;
+    if (!dr.moved) { edPush(); dr.moved = true; }
+    if (dr.t === 'n') { const n = ED.d.nodes.find(x => x.id === dr.id); const q = snapP({x: dr.ox + dx, y: dr.oy + dy}); n.x = q.x; n.y = q.y; }
+    else if (dr.t === 'lt') { const l = ED.d.loads.find(x => x.id === dr.id), n = ED.d.nodes.find(x => x.id === l.n); const q = snapP(p); l.fx = r1((n.x - q.x) / LS * 100) / 100; l.fy = r1((n.y - q.y) / LS * 100) / 100; }
+    else if (dr.t === 'img') { ED.d.img.x = dr.ox + dx; ED.d.img.y = dr.oy + dy; }
+    drawBoard(); return;
+  }
+  if (ED.pend) drawBoard();
+});
+edc.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0) return;
+  const p = toBoard(ev), t = ED.tool, el = ev.target;
+  const nId = el.dataset && el.dataset.n, mId = el.dataset && el.dataset.m, lId = el.dataset && el.dataset.l, ltId = el.dataset && el.dataset.lt, isImg = el.dataset && el.dataset.img;
+  try { edc.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+  if (t === 'select') {
+    if (ltId) { ED.sel = {t: 'l', id: ltId}; ED.drag = {t: 'lt', id: ltId, p, moved: false}; }
+    else if (nId) { const n = ED.d.nodes.find(x => x.id === nId); ED.sel = {t: 'n', id: nId}; ED.drag = {t: 'n', id: nId, p, ox: n.x, oy: n.y, moved: false}; }
+    else if (mId) ED.sel = {t: 'm', id: mId};
+    else if (lId) ED.sel = {t: 'l', id: lId};
+    else ED.sel = null;
+    drawBoard(); renderEdSide(); return;
+  }
+  if (t === 'image') { if (ED.d.img) ED.drag = {t: 'img', p, ox: ED.d.img.x, oy: ED.d.img.y, moved: false}; else toast('Add an image from the panel first.'); return; }
+  if (t === 'node') { edPush(); nodeAtOrNew(p); drawBoard(); renderEdSide(); return; }
+  if (t === 'c' || t === 't' || t === 'u' || t === 'lline') {
+    const k = t === 'lline' ? 'l' : t;
+    if (!ED.pend) { const near = nodeNear(p); ED.pend = near ? {x: near.x, y: near.y, id: near.id} : {...snapP(p), id: null}; drawBoard(); return; }
+    const end = nodeNear(p) || snapP(p);
+    if (Math.hypot(end.x - ED.pend.x, end.y - ED.pend.y) < 6) { ED.pend = null; drawBoard(); return; }
+    edPush();
+    const a = ED.pend.id ? ED.d.nodes.find(n => n.id === ED.pend.id) : nodeAtOrNew(ED.pend), b = nodeAtOrNew(end);
+    if (!ED.d.members.some(m => (m.a === a.id && m.b === b.id) || (m.a === b.id && m.b === a.id))) ED.d.members.push({id: uid('m'), a: a.id, b: b.id, k});
+    ED.pend = {x: b.x, y: b.y, id: b.id}; // continue drawing from the end point; Esc to stop
+    drawBoard(); renderEdSide(); return;
+  }
+  if (t === 'load') {
+    const n = nId ? ED.d.nodes.find(x => x.id === nId) : nodeNear(p);
+    if (!n) { toast('Click on a node to add a load.'); return; }
+    edPush(); const l = {id: uid('l'), n: n.id, fx: 0, fy: 1}; ED.d.loads.push(l); ED.sel = {t: 'l', id: l.id}; drawBoard(); renderEdSide(); return;
+  }
+  if (t === 'support') {
+    const n = nId ? ED.d.nodes.find(x => x.id === nId) : nodeNear(p); if (!n) return;
+    edPush(); n.sup = n.sup === null || n.sup === undefined ? 'pin' : n.sup === 'pin' ? 'roller' : null; drawBoard(); renderEdSide(); return;
+  }
+  if (t === 'erase') {
+    if (mId) { edPush(); ED.d.members = ED.d.members.filter(m => m.id !== mId); }
+    else if (lId || ltId) { edPush(); ED.d.loads = ED.d.loads.filter(l => l.id !== (lId || ltId)); }
+    else if (nId) { edPush(); ED.d.nodes = ED.d.nodes.filter(n => n.id !== nId); ED.d.members = ED.d.members.filter(m => m.a !== nId && m.b !== nId); ED.d.loads = ED.d.loads.filter(l => l.n !== nId); }
+    else return;
+    ED.sel = null; drawBoard(); renderEdSide();
+  }
+});
+const endEdDrag = () => { if (ED.drag) { ED.drag = null; renderEdSide(); } };
+edc.addEventListener('pointerup', endEdDrag);
+edc.addEventListener('pointercancel', endEdDrag);
+edc.addEventListener('pointerleave', () => { if (ED.pend) { ED.hover = null; drawBoard(); } });
+function edKey(ev) {
+  const tag = (ev.target.tagName || '').toLowerCase();
+  const typing = ['input', 'textarea', 'select'].includes(tag);
+  const mod = ev.ctrlKey || ev.metaKey;
+  if (ev.key === 'Escape') { if (typing) { ev.target.blur(); return; } if (ED.pend) { ED.pend = null; drawBoard(); } else if (ED.sel) { ED.sel = null; drawBoard(); renderEdSide(); } return; }
+  if (typing) return;
+  if (mod && ev.key.toLowerCase() === 'z') { ev.preventDefault(); ev.shiftKey ? edRedo() : edUndo(); return; }
+  if (mod) return;
+  if ((ev.key === 'Delete' || ev.key === 'Backspace') && ED.sel) { ev.preventDefault(); delSel(); return; }
+  const t = TOOLS.find(x => x[2].toLowerCase() === ev.key.toLowerCase()); if (t) setTool(t[0]);
+}
+function delSel() {
+  const s = ED.sel; if (!s) return; edPush();
+  if (s.t === 'm') ED.d.members = ED.d.members.filter(m => m.id !== s.id);
+  if (s.t === 'l') ED.d.loads = ED.d.loads.filter(l => l.id !== s.id);
+  if (s.t === 'n') { ED.d.nodes = ED.d.nodes.filter(n => n.id !== s.id); ED.d.members = ED.d.members.filter(m => m.a !== s.id && m.b !== s.id); ED.d.loads = ED.d.loads.filter(l => l.n !== s.id); }
+  ED.sel = null; drawBoard(); renderEdSide();
+}
+
+// transformation commands applied to the whole drawing
+function centroid() { const b = bounds({...ED.d, img: null}); return {x: b.x + b.w / 2, y: b.y + b.h / 2, w: b.w, h: b.h}; }
+const CMDS = {
+  'mirror-v': {label: 'Mirror up–down (invert)', note: 'Swaps compression and tension. Loads keep their direction, as gravity does.', run: () => { const c = centroid(); ED.d.nodes.forEach(n => { n.y = 2 * c.y - n.y; }); ED.d.members.forEach(m => { if (m.k === 'c') m.k = 't'; else if (m.k === 't') m.k = 'c'; }); return 'mirror (invert)'; }},
+  'mirror-h': {label: 'Mirror left–right', note: 'Flips the drawing and the loads sideways.', run: () => { const c = centroid(); ED.d.nodes.forEach(n => { n.x = 2 * c.x - n.x; }); ED.d.loads.forEach(l => { l.fx = -l.fx; }); return 'mirror'; }},
+  'scale-x': {label: 'Scale width', input: 1.5, note: 'Stretches the span. Equilibrium is kept; forces change size.', run: k => { const c = centroid(); ED.d.nodes.forEach(n => { n.x = c.x + (n.x - c.x) * k; }); return `scale x ${k}`; }},
+  'scale-y': {label: 'Scale height', input: 1.5, note: 'Taller or flatter. Rankine: equilibrium is kept under the same vertical loads.', run: k => { const c = centroid(); ED.d.nodes.forEach(n => { n.y = c.y + (n.y - c.y) * k; }); return `scale y ${k}`; }},
+  'rotate': {label: 'Rotate 90° with the loads', note: 'A beam under gravity becomes a tower under wind.', run: () => { const c = centroid(); ED.d.nodes.forEach(n => { const dx = n.x - c.x, dy = n.y - c.y; n.x = c.x - dy; n.y = c.y + dx; }); ED.d.loads.forEach(l => { const fx = l.fx; l.fx = -l.fy; l.fy = fx; }); return 'rotate 90° with load'; }},
+  'array': {label: 'Array along the span', input: 2, note: 'Copies the drawing side by side and joins shared nodes.', run: k => {
+    k = Math.max(2, Math.min(8, Math.round(k))); const c = centroid(), dx = c.w || 100, base = clone({nodes: ED.d.nodes, members: ED.d.members, loads: ED.d.loads});
+    for (let i = 1; i < k; i++) {
+      const map = {};
+      base.nodes.forEach(n => { const x = n.x + dx * i, ex = ED.d.nodes.find(o => Math.hypot(o.x - x, o.y - n.y) < 1); if (ex) { map[n.id] = ex.id; } else { const nn = {...n, id: uid('n'), x}; ED.d.nodes.push(nn); map[n.id] = nn.id; } });
+      base.members.forEach(m => { const a = map[m.a], b = map[m.b]; if (!ED.d.members.some(o => (o.a === a && o.b === b) || (o.a === b && o.b === a))) ED.d.members.push({...m, id: uid('m'), a, b}); });
+      base.loads.forEach(l => ED.d.loads.push({...l, id: uid('l'), n: map[l.n]}));
+    }
+    // keep the outermost supports only
+    const sup = ED.d.nodes.filter(n => n.sup); if (sup.length > 2) { const xs = sup.map(n => n.x), mn = Math.min(...xs), mx = Math.max(...xs); sup.forEach(n => { if (n.x !== mn && n.x !== mx) n.sup = null; }); }
+    return `array x${k}`;
+  }}
+};
+function fitDrawing() {
+  const b = bounds({...ED.d, img: null}); if (!ED.d.nodes.length) return;
+  const k = Math.min(1, 660 / Math.max(b.w, 1), 460 / Math.max(b.h, 1)), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+  ED.d.nodes.forEach(n => { n.x = Math.round(400 + (n.x - cx) * k); n.y = Math.round(300 + (n.y - cy) * k); });
+}
+function runCmd(name) {
+  const cm = CMDS[name]; if (!cm || !ED.d.nodes.length) { toast('Draw something first.'); return; }
+  let k; if (cm.input !== undefined) { k = parseFloat($('cmd-' + name).value); if (!isFinite(k) || k <= 0) { toast('Enter a positive number.'); return; } }
+  edPush(); const label = cm.run(k); fitDrawing(); drawBoard(); renderEdSide();
+  // record it on the link coming into this circle
+  const par = ED.which === 'form' ? parentOf(ED.n) : null;
+  if (par && par.edge.k !== 'mat') {
+    const e = par.edge; edit(null, () => { e.l = (!e.l || e.l === 'command') ? label : `${e.l} + ${label}`; }); renderEdges();
+    toast(`Applied “${label}” and wrote it on the link from ${nodeName(par.node)}.`);
+  } else toast(`Applied “${label}”.`);
+}
+function runCheck() {
+  const res = solveDiagram(ED.d);
+  if (res.status === 'empty') { toast('Draw members first.'); return; }
+  ED.check = res; ED.d.check = {status: res.status, mismatches: res.mismatches.length, at: new Date().toISOString()};
+  drawBoard(); renderEdSide();
+}
+function applyColours() {
+  if (!ED.check || !ED.check.forces) return; edPush(); const f = ED.check.forces;
+  ED.d.members.forEach(m => { if (m.id in f && m.k !== 'l') m.k = f[m.id] < 0 ? 'c' : f[m.id] > 0 ? 't' : 'u'; });
+  ED.check = solveDiagram(ED.d); ED.d.check = {status: ED.check.status, mismatches: ED.check.mismatches.length, at: new Date().toISOString()};
+  drawBoard(); renderEdSide(); toast('Member colours now follow the computed forces.');
+}
+function renderEdSide() {
+  const d = ED.d; if (!d) return;
+  const isForm = ED.which === 'form', ch = ED.check;
+  const nN = d.nodes.length, nM = d.members.filter(m => m.k !== 'l').length, nL = d.loads.length, nS = d.nodes.filter(n => n.sup).length;
+  let sel = '';
+  if (ED.sel && ED.sel.t === 'm') { const m = d.members.find(x => x.id === ED.sel.id); if (m) sel = `<div class="sec"><h3>Selected member</h3><label class="field">Kind<select id="s-kind" data-es="kind">${[['c', 'Compression (blue)'], ['t', 'Tension (red)'], ['u', 'Undecided (grey)'], ['l', 'Load line (green)']].map(([v, l]) => `<option value="${v}"${v === m.k ? ' selected' : ''}>${l}</option>`).join('')}</select></label><div class="row"><button class="danger" data-es="del">Remove member</button></div></div>`; }
+  if (ED.sel && ED.sel.t === 'l') { const l = d.loads.find(x => x.id === ED.sel.id); if (l) { const mag = Math.hypot(l.fx, l.fy), ang = Math.round(Math.atan2(l.fy, l.fx) * 180 / Math.PI); sel = `<div class="sec"><h3>Selected load</h3><div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="field">Size<input type="number" id="s-mag" data-es="mag" step="0.1" min="0" value="${mag.toFixed(2)}"></label><label class="field">Direction °<input type="number" id="s-ang" data-es="ang" step="15" value="${ang}"></label></div><p class="note">90° points straight down, 0° points right. One unit of force is ${LS} grid units of arrow.</p><div class="row"><button class="danger" data-es="del">Remove load</button></div></div>`; } }
+  if (ED.sel && ED.sel.t === 'n') { const n = d.nodes.find(x => x.id === ED.sel.id); if (n) sel = `<div class="sec"><h3>Selected node</h3><label class="field">Support<select id="s-sup" data-es="sup">${[['', 'None'], ['pin', 'Pin (holds both ways)'], ['roller', 'Roller (holds vertically)']].map(([v, l]) => `<option value="${v}"${(n.sup || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label><div class="row"><button data-es="addload">Add load here</button><button class="danger" data-es="del">Remove node</button></div></div>`; }
+  let chk = '';
+  if (isForm) {
+    let res = '<p class="note">Solves the force in every member from the loads and supports, and compares each result with the colour you drew.</p>';
+    if (ch) {
+      const mm = ch.mismatches.length;
+      if (ch.status === 'unbalanced') res = `<div class="result bad"><b>Not in equilibrium</b>The loads cannot be balanced by these members and supports. The highlighted nodes are where force is left over. Add a member or a support, or move nodes so the shape follows the loads.</div>`;
+      else {
+        const head = ch.status === 'balanced' ? (ch.equations > ch.unknowns ? 'In equilibrium (the shape follows the loads)' : 'In equilibrium (statically determinate)') : `In equilibrium, with ${ch.redundant} redundant force${ch.redundant > 1 ? 's' : ''}`;
+        const body = ch.status === 'indeterminate' ? 'More members than needed, so forces are not unique. The values shown are one balanced set without prestress.' : 'Every member force is fixed by the loads.';
+        res = `<div class="result ${mm ? 'bad' : 'ok'}"><b>${head}</b>${body}${mm ? `<br><br><b>${mm} member colour${mm > 1 ? 's' : ''} disagree${mm > 1 ? '' : 's'} with the result</b>They are dashed in orange. A blue member came out in tension, or a red one in compression.` : '<br>Every colour matches the computed force.'}</div>`;
+      }
+    }
+    chk = `<div class="sec"><h3>Equilibrium check</h3>${res}<div class="row"><button class="primary" data-es="check">Check equilibrium</button>${ch && ch.forces && ch.status !== 'unbalanced' && ch.mismatches.length ? '<button data-es="colours">Use computed colours</button>' : ''}</div><p class="note">${nN} nodes, ${nM} members, ${nL} loads, ${nS} supports.</p></div>`;
+  }
+  const im = d.img;
+  const imgSec = `<div class="sec"><h3>Image</h3><p class="note">Use a sketch, a scan or a figure as the diagram, or trace over it.</p><div class="row"><label class="btn"><input type="file" id="s-file" data-es="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>${im ? 'Replace image' : 'Add image'}</label>${im ? '<button data-es="imgfit">Fit to board</button><button class="danger" data-es="imgdel">Remove</button>' : ''}</div>${im ? `<label class="field">Opacity<input type="range" id="s-op" data-es="op" min="0.1" max="1" step="0.05" value="${im.op ?? 1}"></label><label class="field">Size<input type="range" id="s-sz" data-es="sz" min="0.2" max="2" step="0.02" value="${(im.w / 800).toFixed(2)}"></label>` : ''}<p class="note">You can also drop or paste an image onto the board.</p></div>`;
+  const cmdSec = `<div class="sec"><h3>Transformation commands</h3><p class="note">Apply a command to the whole drawing. ${ED.which === 'form' && parentOf(ED.n) ? 'On a form diagram it is also written on the link coming into this circle.' : ''}</p><div class="cmdgrid">${Object.entries(CMDS).filter(([, v]) => v.input === undefined).map(([k, v]) => `<button data-cmd="${k}" title="${esc(v.note)}">${esc(v.label)}</button>`).join('')}</div>${Object.entries(CMDS).filter(([, v]) => v.input !== undefined).map(([k, v]) => `<div class="inline"><button data-cmd="${k}" title="${esc(v.note)}">${esc(v.label)}</button><input type="number" id="cmd-${k}" step="0.1" min="0.1" value="${v.input}" aria-label="${esc(v.label)} factor"></div>`).join('')}</div>`;
+  const par = parentOf(ED.n);
+  const copySec = par && hasDrawing(par.node[ED.which]) ? `<div class="sec"><h3>Start from the linked circle</h3><p class="note">Replace this drawing with the ${ED.which} diagram of ${esc(nodeName(par.node))}, which links into this circle, then apply a command.</p><div class="row"><button data-es="copyprev">Copy from ${esc(nodeName(par.node))}</button></div></div>` : '';
+  $('ed-side').innerHTML = sel + chk + cmdSec + copySec + imgSec + `<div class="sec"><h3>Keys</h3><p class="note"><kbd>V</kbd> move · <kbd>C</kbd> compression · <kbd>T</kbd> tension · <kbd>L</kbd> load · <kbd>S</kbd> support · <kbd>E</kbd> erase · <kbd>Esc</kbd> stop drawing · <kbd>Delete</kbd> remove selection</p></div>`;
+}
+$('ed-side').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-es],[data-cmd]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT' || b.tagName === 'LABEL') return;
+  if (b.dataset.cmd) return runCmd(b.dataset.cmd);
+  const a = b.dataset.es;
+  if (a === 'check') runCheck();
+  else if (a === 'colours') applyColours();
+  else if (a === 'del') delSel();
+  else if (a === 'addload') { const n = ED.d.nodes.find(x => x.id === ED.sel.id); if (n) { edPush(); const l = {id: uid('l'), n: n.id, fx: 0, fy: 1}; ED.d.loads.push(l); ED.sel = {t: 'l', id: l.id}; drawBoard(); renderEdSide(); } }
+  else if (a === 'imgdel') { edPush(); ED.d.img = null; drawBoard(); renderEdSide(); }
+  else if (a === 'imgfit') { edPush(); fitImage(ED.d.img); drawBoard(); renderEdSide(); }
+  else if (a === 'copyprev') { const par = parentOf(ED.n); if (!par) return; edPush(); ED.d = clone(par.node[ED.which]); ED.d.check = null; ED.check = null; ED.sel = null; drawBoard(); renderEdSide(); toast('Copied. Now apply a command or redraw.'); }
+});
+let edInputT = 0;
+$('ed-side').addEventListener('input', ev => {
+  const t = ev.target, a = t.dataset.es; if (!a) return;
+  if (a === 'op' || a === 'sz') {
+    if (!ED.d.img) return;
+    if (Date.now() - edInputT > 1200) edPush(); edInputT = Date.now();
+    if (a === 'op') ED.d.img.op = +t.value;
+    else { const im = ED.d.img, cx = im.x + im.w / 2, cy = im.y + im.h / 2, k = +t.value, ar = im.h / im.w; im.w = 800 * k; im.h = im.w * ar; im.x = cx - im.w / 2; im.y = cy - im.h / 2; }
+    drawBoard();
+  }
+});
+$('ed-side').addEventListener('change', async ev => {
+  const t = ev.target, a = t.dataset.es; if (!a) return;
+  if (a === 'file') { const f = t.files && t.files[0]; t.value = ''; if (f) addBoardImage(f); return; }
+  const s = ED.sel; if (!s) return;
+  edPush();
+  if (a === 'kind') { const m = ED.d.members.find(x => x.id === s.id); if (m) m.k = t.value; }
+  if (a === 'sup') { const n = ED.d.nodes.find(x => x.id === s.id); if (n) n.sup = t.value || null; }
+  if (a === 'mag' || a === 'ang') {
+    const l = ED.d.loads.find(x => x.id === s.id); if (!l) return;
+    const mag = a === 'mag' ? Math.max(0, +t.value) : Math.hypot(l.fx, l.fy), ang = (a === 'ang' ? +t.value : Math.atan2(l.fy, l.fx) * 180 / Math.PI) * Math.PI / 180;
+    l.fx = Math.round(Math.cos(ang) * mag * 1000) / 1000; l.fy = Math.round(Math.sin(ang) * mag * 1000) / 1000;
+  }
+  drawBoard(); renderEdSide();
+});
+function fitImage(im) { if (!im) return; const ar = (im.ih || 3) / (im.iw || 4); let w = 760, h = w * ar; if (h > 560) { h = 560; w = h / ar; } im.w = w; im.h = h; im.x = 400 - w / 2; im.y = 300 - h / 2; }
+async function addBoardImage(file) {
+  try {
+    statusUI('Adding image…');
+    let dims = {iw: 4, ih: 3}; try { const bmp = await createImageBitmap(file); dims = {iw: bmp.width, ih: bmp.height}; } catch (e) { /* keep default */ }
+    const st = Object.assign(await storeImage(file), dims); edPush();
+    ED.d.img = Object.assign({op: hasDrawing({...ED.d, img: null}) ? 0.45 : 1}, st); fitImage(ED.d.img);
+    drawBoard(); renderEdSide(); toast('Image added. Draw over it, or keep it as the diagram.');
+  } catch (err) { toast(imgError(err)); }
+  statusUI();
+}
+const boardWrap = document.querySelector('.board-wrap');
+boardWrap.addEventListener('dragover', ev => { if (ev.dataTransfer && [...ev.dataTransfer.types].includes('Files')) ev.preventDefault(); });
+boardWrap.addEventListener('drop', ev => { ev.preventDefault(); const f = ev.dataTransfer && [...ev.dataTransfer.files].find(x => x.type.startsWith('image/')); if (f) addBoardImage(f); });
+document.addEventListener('paste', ev => {
+  if ($('ed').hidden) return;
+  const f = ev.clipboardData && [...ev.clipboardData.files].find(x => x.type.startsWith('image/'));
+  if (f) { ev.preventDefault(); addBoardImage(f); }
+});
+$('ed').querySelector('.ed-bar').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-ed]'); if (!b) return;
+  const a = b.dataset.ed;
+  if (a === 'done') closeBoard(true);
+  else if (a === 'cancel') closeBoard(false);
+  else if (a === 'undo') edUndo();
+  else if (a === 'redo') edRedo();
+});
+
 
 // ---------- photos published next to the page (GitHub copy): photos/manifest.json ----------
 async function loadManifest() {
