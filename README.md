@@ -17,6 +17,8 @@ An editable version of the knowledge graph from RGC proposal 27628327, *Form-Fin
 | `scripts/fetch_photos.py` | Downloads the photos (run by GitHub Actions) |
 | `photos/manifest.json` | Written by the script; the editor reads it to fill the photo rings |
 | `CREDITS.md` | Author, licence and source page of every photo |
+| `lab/index.html` | The Equilibrium Case Lab: form and force diagrams for up to ten cases, equilibrium checks, and the rules that link them |
+| `lab/cases.json` | The cases, drawings and rules the lab opens with |
 
 ## Reviewing the graph
 
@@ -24,3 +26,15 @@ An editable version of the knowledge graph from RGC proposal 27628327, *Form-Fin
 - Photos picked by *Wikimedia Commons search* in `CREDITS.md` were chosen automatically, so check them before use.
 - To change a photo, edit its entry in `photos/sources.json` (a Commons file name or a search). The **Fetch case photos** action then runs again.
 - Edits made in the browser stay in that browser. Use **Export → JSON** to share a changed layout.
+
+## Equilibrium Case Lab
+
+**Open it:** https://gabrielle-guo.github.io/knowledge-graph/lab/
+
+Each case runs along the same chain as the graph: **2D prototype → first-step transformation → In-Between State → Materialize → built case**. At every stage you can draw a form diagram and a force diagram, with blue for compression, red for tension and green for loads, or use an image instead.
+
+- **Check equilibrium** solves the force in every member from the loads and supports, and flags any member whose colour disagrees with the result.
+- **Transformation commands** (mirror, scale, rotate with the loads, array) apply to a whole drawing and record themselves as that stage's command.
+- **Compare and rules** lines the cases up, lists what they share, and keeps the rules you are testing.
+
+The working copy is the Claude version of the lab, which saves every change. To update this public copy, use **Export → JSON** there and upload the file here as `lab/cases.json`, replacing the old one.
