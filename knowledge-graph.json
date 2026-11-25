@@ -1,0 +1,21 @@
+{
+ "v": 1,
+ "savedAt": "",
+ "board": {
+  "w": 2180,
+  "h": 1460
+ },
+ "legend": {
+  "x": 1905,
+  "y": 330,
+  "show": true
+ },
+ "opts": {
+  "captions": true,
+  "snap": false,
+  "pngScale": 2,
+  "arrow": "none"
+ },
+ "nodes": [],
+ "edges": []
+}
