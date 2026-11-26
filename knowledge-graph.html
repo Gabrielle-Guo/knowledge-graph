@@ -470,6 +470,8 @@ function capSide(n) {
 function caption(n, rows, r) {
   const lh = 12.5, side = capSide(n);
   if (n.todo) r += 7;  // clear the dashed ring
+  // compact view: a state shows only its code (click it for the rest); a built case keeps its name
+  if (state.opts.compact) rows = n.t === 'case' ? rows.filter(([, c]) => c !== 'cy') : (n.code ? rows.slice(0, 1) : rows.slice(0, 1));
   let x = 0, y, anchor = '';
   if (side === 'below') y = r + 16;
   else if (side === 'above') y = -r - 8 - (rows.length - 1) * lh;
@@ -520,7 +522,7 @@ function nodeInner(n, exp, srcOverride) {
   if (n.todo) { s += `<circle r="${r + 6}" class="todo-ring"/>`; if (!src && n.t === 'ib' && !G[n.glyph]) s += `<text y="4" class="todo-t">to draw</text>`; }
   return s;
 }
-const nodeMarkup = (n, exp, srcOverride) => `<g class="nd" data-id="${n.id}" transform="translate(${r1(n.x)},${r1(n.y)})">${nodeInner(n, exp, srcOverride)}</g>`;
+const nodeMarkup = (n, exp, srcOverride) => `<g class="nd" data-id="${n.id}" transform="translate(${r1(n.x)},${r1(n.y)})">${!exp ? `<title>${esc(nodeName(n))}</title>` : ''}${nodeInner(n, exp, srcOverride)}</g>`;
 
 function edgeGeom(e) {
   const a = byId[e.a], b = byId[e.b];
@@ -548,13 +550,15 @@ function edgeMarkup(e, live) {
     const mat = k === 'mat', fns = edgeFns(e);
     const open = `<g transform="translate(${r1(px)},${r1(py)}) rotate(${r1(a)})"${live ? ` data-e="${e.id}"` : ''}>`;
     if (!fns.length) {
-      const w = Math.max(mat ? 64 : 40, textW(e.l, mat) + 16);
-      s += `${open}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${mat ? ' mat' : ''}"/><text y=".5" class="ptxt${mat ? ' mat' : ''}">${esc(e.l)}</text></g>`;
+      // a short Materialize link (or the compact view) shows just "M"
+      const shortM = mat && (state.opts.compact || Math.hypot(g.ex - g.sx, g.ey - g.sy) < 80), lbl = shortM ? 'M' : e.l;
+      const w = shortM ? 20 : Math.max(mat ? 64 : 40, textW(e.l, mat) + 16);
+      s += `${open}${live && shortM ? `<title>${esc(e.l)}</title>` : ''}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${mat ? ' mat' : ''}"/><text y=".5" class="ptxt${mat ? ' mat' : ''}">${esc(lbl)}</text></g>`;
     } else {
       // coloured function tags, then the call text; on a link too short for the text only the tags show
       const tws = fns.map(f => textW(f.id, true, 9) + 9), tagsW = tws.reduce((x, y) => x + y, 0) + 3 * (fns.length - 1);
       const avail = Math.hypot(g.ex - g.sx, g.ey - g.sy) - 10, fullW = tagsW + textW(e.l, false) + 16;
-      const compact = fullW > avail, w = compact ? tagsW + 8 : fullW;
+      const compact = state.opts.compact || fullW > avail, w = compact ? tagsW + 8 : fullW;
       let x = -w / 2 + 4;
       s += `${open}${live && compact ? `<title>${esc(e.l)}</title>` : ''}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${isBlank(e) ? ' todo' : ''}"/>`;
       fns.forEach((f, i) => {
@@ -845,6 +849,7 @@ function panelGraph() {
   </section>
   <section class="sec">
     <h3>Figure</h3>
+    <label class="chk"><input type="checkbox" id="g-compact" data-f="g-compact"${state.opts.compact ? ' checked' : ''}> Compact view: codes and function tags only (click a circle or link for the details)</label>
     <label class="chk"><input type="checkbox" id="g-captions" data-f="g-captions"${state.opts.captions ? ' checked' : ''}> Show names under photos</label>
     <label class="chk"><input type="checkbox" id="g-legend" data-f="g-legend"${state.legend.show ? ' checked' : ''}> Show legend</label>
     <label class="chk"><input type="checkbox" id="g-snap" data-f="g-snap"${state.opts.snap ? ' checked' : ''}> Snap to a 10 px grid while dragging</label>
@@ -1137,6 +1142,7 @@ panel.addEventListener('change', ev => {
     renderEdges(); drawOverlay(); renderPanel(); return;
   }
   if (f === 'g-fntable') { edit(null, () => { state.fntable.show = t.checked; }); renderFntable(); drawOverlay(); }
+  else if (f === 'g-compact') { edit(null, () => { state.opts.compact = t.checked; }); renderNodes(); renderEdges(); drawOverlay(); }
   else if (f === 'g-captions') { edit(null, () => { state.opts.captions = t.checked; }); renderNodes(); drawOverlay(); }
   else if (f === 'g-legend') { edit(null, () => { state.legend.show = t.checked; }); renderLegend(); }
   else if (f === 'g-snap') edit(null, () => { state.opts.snap = t.checked; });
