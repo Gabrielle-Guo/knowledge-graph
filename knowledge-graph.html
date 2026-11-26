@@ -282,7 +282,7 @@ let inFrame = true; try { inFrame = window.self !== window.top; } catch (e) { in
 
 // ---------- state ----------
 // The function library: minimal, named steps (like Grasshopper components) that a link's command calls, e.g. PolarArray(Z, n=4).
-const FN_DEFAULT = {"axes":"X = span, Y = depth, Z = up (as in Rhino). 2D prototypes are drawn in the XZ plane, so a turn inside the drawing is a rotation about Y. 'tip' is the single corner opposite the two supports or loads; 'top', 'base', 'legs', 'ring', 'twigs' name the other parts.","list":[{"id":"F1","name":"Divide","sig":"Divide(member, n)","color":"#8a6500","group":"Nodes and members","def":"Split a member into n equal segments by adding n − 1 nodes on it.","steps":["Pick the member a–b.","Add the nodes p_i = a + (i/n)(b − a) for i = 1 … n − 1.","Replace a–b by the n short members a–p_1, …, p_(n−1)–b."],"gh":"Divide Curve","eq":"kept","eqNote":"Kept: the new nodes are straight-through joints. Putting loads on them is part of the next step."},{"id":"F2","name":"Move","sig":"Move(nodes, vector)","color":"#c2410c","group":"Nodes and members","def":"Translate the chosen nodes; the members attached to them follow.","steps":["Pick the nodes S.","Move each node p in S to p + v.","Members keep their end nodes, so they stretch and turn."],"gh":"Move","eq":"re-check","eqNote":"Re-check: member directions change, so the forces change, and a C member can turn into T."},{"id":"F3","name":"Truncate","sig":"Truncate(node, t)","color":"#6d28d9","group":"Nodes and members","def":"Cut a corner: replace node v by two nodes on its two members and join them with a new member.","steps":["Pick the corner v and its two members v–a and v–b.","Mark the points at fraction t from v: v1 = v + t(a − v), v2 = v + t(b − v). With t = 0.5 they are the midpoints of the two sides.","Connect v1–v2 with a new member.","Give the load or support at v to v1 and v2, half each.","Remove v and the short members v–v1, v–v2."],"gh":"Evaluate Curve (t) + Line + Cull","eq":"re-check","eqNote":"Re-check: the new member takes the force that turned the corner. It is C where the sides push (arch, V-strut) and T where they pull (cable). The trapezoid is balanced for the two equal loads that replace the single one."},{"id":"F4","name":"Branch","sig":"Branch(node, k, t)","color":"#7a4b1e","group":"Nodes and members","def":"Gather the members of a fan into k groups; each group meets at a new branch node that is joined back to the fan node by one member.","steps":["Pick the fan node v and its members.","Split the members into k groups (k = 2: left | right halves; k = 3: symmetric pairs).","For each group add a branch node at fraction t along the group's mean direction from v.","Re-attach the group's members from v to its branch node.","Connect v to each branch node."],"gh":"Move + Line","eq":"re-check","eqNote":"Re-check: each branch node must balance its group. A branch is straight under load when it points along the resultant of its group's loads."},{"id":"F5","name":"Extend","sig":"Extend(node, direction, to)","color":"#4d7c0f","group":"Nodes and members","def":"Add a new member from a node along a direction until it reaches a target (the ground or a length L); its far end becomes a support.","steps":["Pick the node v and the direction d (for example −Z).","Add the node e where the ray v + s·d meets the target.","Connect v–e.","The support at v moves to e (or e becomes a new support)."],"gh":"Line SDL","eq":"re-check","eqNote":"Re-check: the new member carries what the support used to take at v — C for a mast or column, T for a hanger."},{"id":"F6","name":"Remove","sig":"Remove(members)","color":"#6b7280","group":"Nodes and members","def":"Delete the chosen members (or nodes with their members).","steps":["Pick the members (or nodes) to delete.","Delete them; a node left with no members is deleted too."],"gh":"Cull","eq":"re-check","eqNote":"Re-check: the structure may turn into a mechanism or need new supports. Removing an arch's tie sends its thrust to the supports."},{"id":"F7","name":"Connect","sig":"Connect(a, b | ring)","color":"#334155","group":"Nodes and members","def":"Add a member between two existing nodes, or a closed ring through a list of nodes.","steps":["Pick the nodes a and b, or the ring a_1 … a_n.","Add the member a–b (for a ring: a_1–a_2, …, a_n–a_1)."],"gh":"Line / Polyline (closed)","eq":"re-check","eqNote":"Re-check: adds a load path. A ring at splayed feet collects their outward push in T; a ring at a waist collects an inward pull in C."},{"id":"F8","name":"Scale","sig":"Scale(sx, sz, origin)","color":"#be185d","group":"Whole diagram","def":"Stretch the whole diagram about an origin, with different factors per axis if needed.","steps":["Pick the origin o and the factors (sx, sy, sz).","Move every node p to o + (sx(p − o)_x, sy(p − o)_y, sz(p − o)_z)."],"gh":"Scale NU","eq":"kept","eqNote":"Kept, with C and T unchanged (a parallel projection, Rankine). Force sizes change: in a 2D drawing vertical loads scale by sz/sx."},{"id":"F9","name":"Rotate","sig":"Rotate(axis, θ, loads)","color":"#4338ca","group":"Whole diagram","def":"Turn the diagram, or the part named first, about an axis by θ.","steps":["Pick what turns (default: everything), the axis and the angle θ.","Rotate the nodes about the axis.","Loads turn with the shape by default; write 'gravity' when they stay vertical."],"gh":"Rotate / Rotate Axis / Rotate 3D","eq":"kept","eqNote":"Kept when the loads turn too (a rigid motion): every force is unchanged. With 'gravity' the loads keep pointing down, so re-check — a bar can switch from C to T."},{"id":"F10","name":"Mirror","sig":"Mirror(plane)","color":"#0e7490","group":"Whole diagram","def":"Reflect the diagram in a plane.","steps":["Pick the plane (vertical YZ, or horizontal XY).","Reflect every node in it.","Loads keep pointing down."],"gh":"Mirror","eq":"kept, C↔T","eqNote":"In a vertical plane: kept, forces unchanged. In a horizontal plane with loads still pointing down, every force changes sign, C↔T: Hooke's hanging chain turns an arch into a cable. Mirror(XY) = FlipLoad ∘ Rotate(Y, 180°) for a symmetric shape, so P1 → P4."},{"id":"F11","name":"FlipLoad","sig":"FlipLoad()","color":"#a21caf","group":"Whole diagram","def":"Reverse every load, and so every reaction.","steps":["Multiply every load vector by −1.","Supports stay where they are; their reactions reverse too."],"gh":"Negative (vector × −1)","eq":"kept, C↔T","eqNote":"Kept, and every member force changes sign: C becomes T and T becomes C."},{"id":"F12","name":"Array","sig":"Array(direction, n, d)","color":"#0f766e","group":"Copies and combination","def":"Make n copies spaced d along a direction; copies that touch share nodes.","steps":["Pick the direction (X, Y or Z), the count n and the spacing d (default: the width, so copies just touch).","Copy the diagram n − 1 times, each moved by d.","Merge nodes that coincide."],"gh":"Linear Array","eq":"kept per copy","eqNote":"Each copy is balanced on its own. Where copies share nodes their forces add; when d is less than the width the copies overlap, so re-check."},{"id":"F13","name":"PolarArray","sig":"PolarArray(axis, n)","color":"#9f1239","group":"Copies and combination","def":"Make n copies turned by 360°/n about an axis (Z = vertical).","steps":["Pick the axis and the count n.","Copy the diagram n − 1 times, each turned a further 360°/n.","Merge nodes on the axis and any that coincide."],"gh":"Polar Array","eq":"re-check rings","eqNote":"Each copy stays balanced in its own plane. At shared nodes (the axis, the rings) the forces add, so check them; splayed feet need a ring."},{"id":"F14","name":"Superpose","sig":"Superpose(A, B, …)","color":"#1e3a8a","group":"Copies and combination","def":"Overlay diagrams in one frame, merge the nodes that coincide and add their loads.","steps":["Place each diagram as stated (stack along an axis, cross on an axis, or overlap).","Merge coincident nodes; a member shared by two diagrams carries the sum of their forces.","Add the loads at each merged node."],"gh":"Merge + Combine & Clean","eq":"re-check","eqNote":"If every part is balanced and they meet only at nodes, the sum is balanced (superposition). New contacts or merged members need a re-check."},{"id":"F15","name":"Intent","sig":"Intent(goal) ≈ f(…)","color":"#ffffff","group":"Architectural intent","def":"A step driven by an architectural purpose that no single function captures. Record the goal in words, then the nearest function and its parameters.","steps":["Write the goal: who or what the change is for.","Write ≈ and the nearest function call, for example Move(one side, +X).","Draw the result and re-check it."],"gh":"—","eq":"re-check","eqNote":"Always re-check. The nearest function tells you which check applies."}]};
+const FN_DEFAULT = {"axes":"X = span, Y = depth, Z = up (as in Rhino). 2D prototypes are drawn in the XZ plane, so a turn inside the drawing is a rotation about Y. 'tip' is the single corner opposite the two supports or loads; 'top', 'base', 'legs', 'ring', 'twigs' name the other parts.","list":[{"id":"F1","name":"Divide","sig":"Divide(member, n)","color":"#8a6500","group":"Nodes and members","def":"Split a member into n equal segments by adding n − 1 nodes on it.","steps":["Pick the member a–b.","Add the nodes p_i = a + (i/n)(b − a) for i = 1 … n − 1.","Replace a–b by the n short members a–p_1, …, p_(n−1)–b."],"gh":"Divide Curve","eq":"kept","eqNote":"Kept: the new nodes are straight-through joints. Putting loads on them is part of the next step."},{"id":"F2","name":"Move","sig":"Move(nodes, vector)","color":"#c2410c","group":"Nodes and members","def":"Translate the chosen nodes; the members attached to them follow.","steps":["Pick the nodes S.","Move each node p in S to p + v.","Members keep their end nodes, so they stretch and turn."],"gh":"Move","eq":"re-check","eqNote":"Re-check: member directions change, so the forces change, and a C member can turn into T."},{"id":"F3","name":"Truncate","sig":"Truncate(node, t)","color":"#6d28d9","group":"Nodes and members","def":"Cut a corner: replace node v by two nodes on its two members and join them with a new member.","steps":["Pick the corner v and its two members v–a and v–b.","Mark the points at fraction t from v: v1 = v + t(a − v), v2 = v + t(b − v). With t = 0.5 they are the midpoints of the two sides.","Connect v1–v2 with a new member.","Give the load or support at v to v1 and v2, half each.","Remove v and the short members v–v1, v–v2."],"gh":"Evaluate Curve (t) + Line + Cull","eq":"re-check","eqNote":"Re-check: the new member takes the force that turned the corner. It is C where the sides push (arch, V-strut) and T where they pull (cable). The trapezoid is balanced for the two equal loads that replace the single one."},{"id":"F4","name":"Branch","sig":"Branch(node, k, t)","color":"#7a4b1e","group":"Nodes and members","def":"Gather the members of a fan into k groups; each group meets at a new branch node that is joined back to the fan node by one member.","steps":["Pick the fan node v and its members.","Split the members into k groups (k = 2: left | right halves; k = 3: symmetric pairs).","For each group add a branch node at fraction t along the group's mean direction from v.","Re-attach the group's members from v to its branch node.","Connect v to each branch node."],"gh":"Move + Line","eq":"re-check","eqNote":"Re-check: each branch node must balance its group. A branch is straight under load when it points along the resultant of its group's loads."},{"id":"F5","name":"Extend","sig":"Extend(node, direction, to)","color":"#4d7c0f","group":"Nodes and members","def":"Add a new member from a node along a direction until it reaches a target (the ground or a length L); its far end becomes a support.","steps":["Pick the node v and the direction d (for example −Z).","Add the node e where the ray v + s·d meets the target.","Connect v–e.","The support at v moves to e (or e becomes a new support)."],"gh":"Line SDL","eq":"re-check","eqNote":"Re-check: the new member carries what the support used to take at v — C for a mast or column, T for a hanger."},{"id":"F6","name":"Remove","sig":"Remove(members)","color":"#6b7280","group":"Nodes and members","def":"Delete the chosen members (or nodes with their members).","steps":["Pick the members (or nodes) to delete.","Delete them; a node left with no members is deleted too."],"gh":"Cull","eq":"re-check","eqNote":"Re-check: the structure may turn into a mechanism or need new supports. Removing an arch's tie sends its thrust to the supports."},{"id":"F7","name":"Connect","sig":"Connect(a, b | ring)","color":"#334155","group":"Nodes and members","def":"Add a member between two existing nodes, or a closed ring through a list of nodes.","steps":["Pick the nodes a and b, or the ring a_1 … a_n.","Add the member a–b (for a ring: a_1–a_2, …, a_n–a_1)."],"gh":"Line / Polyline (closed)","eq":"re-check","eqNote":"Re-check: adds a load path. A ring at splayed feet collects their outward push in T; a ring at a waist collects an inward pull in C."},{"id":"F8","name":"Scale","sig":"Scale(sx, sz, origin)","color":"#be185d","group":"Whole diagram","def":"Stretch the whole diagram about an origin, with different factors per axis if needed.","steps":["Pick the origin o and the factors (sx, sy, sz).","Move every node p to o + (sx(p − o)_x, sy(p − o)_y, sz(p − o)_z)."],"gh":"Scale NU","eq":"kept","eqNote":"Kept, with C and T unchanged (a parallel projection, Rankine). Force sizes change: in a 2D drawing vertical loads scale by sz/sx."},{"id":"F9","name":"Rotate","sig":"Rotate(axis, θ, loads)","color":"#4338ca","group":"Whole diagram","def":"Turn the diagram, or the part named first, about an axis by θ.","steps":["Pick what turns (default: everything), the axis and the angle θ.","Rotate the nodes about the axis.","Loads turn with the shape by default; write 'gravity' when they stay vertical."],"gh":"Rotate / Rotate Axis / Rotate 3D","eq":"kept","eqNote":"Kept when the loads turn too (a rigid motion): every force is unchanged. With 'gravity' the loads keep pointing down, so re-check — a bar can switch from C to T."},{"id":"F10","name":"Mirror","sig":"Mirror(plane)","color":"#0e7490","group":"Whole diagram","def":"Reflect the diagram in a plane.","steps":["Pick the plane (vertical YZ, or horizontal XY).","Reflect every node in it.","Loads keep pointing down."],"gh":"Mirror","eq":"kept, C↔T","eqNote":"In a vertical plane: kept, forces unchanged. In a horizontal plane with loads still pointing down, every force changes sign, C↔T: Hooke's hanging chain turns an arch into a cable. Mirror(XY) = FlipLoad ∘ Rotate(Y, 180°) for a symmetric shape, so P1 → P4."},{"id":"F11","name":"FlipLoad","sig":"FlipLoad()","color":"#a21caf","group":"Whole diagram","def":"Reverse every load, and so every reaction.","steps":["Multiply every load vector by −1.","Supports stay where they are; their reactions reverse too."],"gh":"Negative (vector × −1)","eq":"kept, C↔T","eqNote":"Kept, and every member force changes sign: C becomes T and T becomes C."},{"id":"F12","name":"Array","sig":"Array(direction, n, d)","color":"#0f766e","group":"Copies and combination","def":"Make n copies spaced d along a direction; copies that touch share nodes.","steps":["Pick the direction (X, Y or Z), the count n and the spacing d (default: the width, so copies just touch).","Copy the diagram n − 1 times, each moved by d.","Merge nodes that coincide."],"gh":"Linear Array","eq":"kept per copy","eqNote":"Each copy is balanced on its own. Where copies share nodes their forces add; when d is less than the width the copies overlap, so re-check."},{"id":"F13","name":"PolarArray","sig":"PolarArray(axis, n)","color":"#9f1239","group":"Copies and combination","def":"Make n copies turned by 360°/n about an axis (Z = vertical).","steps":["Pick the axis and the count n.","Copy the diagram n − 1 times, each turned a further 360°/n.","Merge nodes on the axis and any that coincide."],"gh":"Polar Array","eq":"re-check rings","eqNote":"Each copy stays balanced in its own plane. At shared nodes (the axis, the rings) the forces add, so check them; splayed feet need a ring."},{"id":"F14","name":"Superpose","sig":"Superpose(A, B, …)","color":"#1e3a8a","group":"Copies and combination","def":"Overlay diagrams in one frame, merge the nodes that coincide and add their loads.","steps":["Place each diagram as stated (stack along an axis, cross on an axis, or overlap).","Merge coincident nodes; a member shared by two diagrams carries the sum of their forces.","Add the loads at each merged node."],"gh":"Merge + Combine & Clean","eq":"re-check","eqNote":"If every part is balanced and they meet only at nodes, the sum is balanced (superposition). New contacts or merged members need a re-check."},{"id":"F15","name":"Intent","sig":"Intent(type: goal) ≈ f(…)","color":"#ffffff","group":"Architectural intent","def":"A step driven by an architectural purpose that no single function captures. Record the type and the goal in words, then the nearest function and its values.","steps":["Choose the type: use (people and activity), span (span, clearance, cantilever), light (light and view), site, or construction.","Write the goal in a few words, e.g. Intent(use: room to wait for the bus).","Write ≈ and the nearest function call with its values, e.g. ≈ Move(one side, +X, d=?).","Give the intent its own link, at the step where the decision is made; draw the result and re-check it."],"gh":"—","eq":"re-check","eqNote":"Always re-check. The nearest function tells you which check applies."}],"rules":"Corner nodes of the 2D prototype are the starting points. A new point is made either between two existing nodes (a fraction t along a member, 0 to 1; t = 0.5 is the midpoint) or beyond a node (along a direction until a stop: ground, a length L, or a member). Whole-diagram moves (Rotate, Scale, Mirror) shift every node together. Name every numeric parameter (n=, t=, θ=, d=, sx=). Write ? for a value still to fill and ≈ for a measured value. Keep one or two functions per link. Every pipeline runs in three stages: geometry (exact rule values) → intent (Intent(type: goal) ≈ Function(values)) → Materialize."};
 const clone = o => JSON.parse(JSON.stringify(o));
 function normalize(st) {
   st.opts = Object.assign({captions: true, snap: false, pngScale: 2, arrow: 'none'}, st.opts || {});
@@ -309,15 +309,37 @@ const reindex = () => {
 reindex();
 // function calls written in a command: Name(args). The same text (ignoring spaces and case) means the same parameters.
 const CALL_RE = /([A-Za-z][A-Za-z0-9]*)\s*\(([^()]*)\)/g;
+const isIntent = f => f && String(f.name).toLowerCase() === 'intent';
+// Two levels of "equal": the same template (function + parameter names + axes/parts) and the same values.
+// n=4 and n=6 share the template PolarArray(Z, n); '?' is a value left to fill; '≈' marks a measured value.
+const argParts = a => a.split(/[,;]/).map(s => s.trim()).filter(Boolean);
+const NAMED = /^([^=≈<>]+?)\s*([=≈])\s*(.*)$/;
+function template(f, args) {
+  if (isIntent(f)) return `${f.name}(${args.includes(':') ? args.split(':')[0].trim() : '…'})`;
+  return `${f.name}(${argParts(args).map(a => { const m = a.match(NAMED); if (m) return m[1]; return /^[−\-+±]?\s*[\d.]+\s*°?$|^\?$/.test(a) ? '#' : a; }).join(', ')})`;
+}
 function calls(l) {
   l = String(l || ''); if (callCache.has(l)) return callCache.get(l);
   const out = []; let m; CALL_RE.lastIndex = 0;
-  while ((m = CALL_RE.exec(l))) { const f = fnByName[m[1].toLowerCase()]; if (f) out.push({f, text: m[0], args: m[2].trim(), key: m[0].replace(/\s+/g, '').toLowerCase()}); }
+  while ((m = CALL_RE.exec(l))) {
+    const f = fnByName[m[1].toLowerCase()]; if (!f) continue;
+    const args = m[2].trim(), tpl = template(f, args);
+    out.push({f, text: m[0], args, key: m[0].replace(/\s+/g, '').toLowerCase(), tpl, tkey: 'tpl:' + tpl.replace(/\s+/g, '').toLowerCase(), blank: m[0].includes('?'),
+      vals: isIntent(f) ? [] : argParts(args).map(a => a.match(NAMED)).filter(Boolean).map(x => [x[1], x[3], x[2]])});
+  }
   callCache.set(l, out); return out;
 }
 const edgeFns = e => e.k === 'mat' ? [] : [...new Map(calls(e.l).map(c => [c.f.id, c.f])).values()];
-const edgesUsing = (fid, key) => state.edges.filter(e => e.k !== 'mat' && calls(e.l).some(c => c.f.id === fid && (!key || c.key === key)));
-const isIntent = f => f && String(f.name).toLowerCase() === 'intent';
+// key: undefined = any call of the function; 'tpl:…' = same template; otherwise the exact call
+const edgesUsing = (fid, key) => state.edges.filter(e => e.k !== 'mat' && calls(e.l).some(c => c.f.id === fid && (!key || c.key === key || c.tkey === key)));
+const isBlank = e => e.k !== 'mat' && /\?/.test(e.l || '');
+const stageOf = e => e.k === 'mat' ? 'materialize' : calls(e.l).some(c => isIntent(c.f)) ? 'intent' : 'geometry';
+// every value each parameter of a function has taken, e.g. n: 4 ×2, 6, ?
+function ranges(f) {
+  const m = new Map();
+  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => { if (c.f.id === f.id) c.vals.forEach(([k, v, op]) => { const g = m.get(k) || new Map(); const vv = (op === '≈' ? '≈' : '') + v; g.set(vv, (g.get(vv) || 0) + 1); m.set(k, g); }); }));
+  return [...m.entries()].map(([k, g]) => `${k}: ${[...g.entries()].map(([v, n]) => v + (n > 1 ? ' ×' + n : '')).join(', ')}`).join(' · ');
+}
 let dirty = restored, baseKey = embedded.savedAt, submitView = false;
 let sel = {nodes: new Set(), edge: null, legend: false, fn: null, call: null, fntable: false};
 let mode = 'select', connectFrom = null, preview = null, drag = null, dropTarget = null;
@@ -332,6 +354,7 @@ ${p}.f{stroke:#22a05a;stroke-width:2.2;fill:none}${p}.fh{fill:#22a05a}${p}.s{fil
 ${p}.lk{stroke:#c4c8ce;stroke-width:7;stroke-linecap:round;fill:none}${p}.lk.mat{stroke:#3a3f45;stroke-width:3}${p}.lk.comb{stroke:#6b717a;stroke-width:1.8}
 ${p}.pill{fill:#c4c8ce}${p}.pill.mat{fill:#111111}
 ${p}.ptxt{font-size:10.5px;fill:#30353b;text-anchor:middle;dominant-baseline:central}${p}.ptxt.mat{fill:#ffffff;font-weight:700}${p}.ptxt.l{text-anchor:start}
+${p}.pill.todo{stroke:#d97706;stroke-width:1.5;stroke-dasharray:3 2}${p}.todo-ring{fill:none;stroke:#d97706;stroke-width:2;stroke-dasharray:6 4}${p}.todo-t{font-size:11px;fill:#b45309;text-anchor:middle;font-weight:700}
 ${p}.ftag{font-size:9px;font-weight:700;fill:#ffffff;text-anchor:middle;dominant-baseline:central}${p}.ftag.int{fill:#111111}
 ${p}.ft{font-size:12px}${p}.ft.s{fill:#5b636e;font-size:11px}${p}.ft.h{font-size:11px;fill:#5b636e;text-transform:uppercase;letter-spacing:.06em}${p}.ft.m{font-family:Consolas,"Courier New",monospace;font-size:11.5px}
 ${p}.nl{font-size:11.5px;text-anchor:middle}${p}.nl.b{font-weight:700}${p}.out{paint-order:stroke;stroke:#ffffff;stroke-width:3.5px;stroke-linejoin:round}
@@ -443,6 +466,7 @@ function capSide(n) {
 // rows: [[text, class], …] placed outside the circle on its free side, with a white halo so a link under it stays readable
 function caption(n, rows, r) {
   const lh = 12.5, side = capSide(n);
+  if (n.todo) r += 7;  // clear the dashed ring
   let x = 0, y, anchor = '';
   if (side === 'below') y = r + 16;
   else if (side === 'above') y = -r - 8 - (rows.length - 1) * lh;
@@ -489,6 +513,8 @@ function nodeInner(n, exp, srcOverride) {
       rows.forEach(([l, c]) => { s += `<text y="${r1(y)}" class="${c}">${esc(l)}</text>`; y += 12; });
     }
   }
+  // a diagram still to draw: dashed amber ring
+  if (n.todo) { s += `<circle r="${r + 6}" class="todo-ring"/>`; if (!src && n.t === 'ib' && !G[n.glyph]) s += `<text y="4" class="todo-t">to draw</text>`; }
   return s;
 }
 const nodeMarkup = (n, exp, srcOverride) => `<g class="nd" data-id="${n.id}" transform="translate(${r1(n.x)},${r1(n.y)})">${nodeInner(n, exp, srcOverride)}</g>`;
@@ -524,10 +550,10 @@ function edgeMarkup(e, live) {
     } else {
       // coloured function tags, then the call text; on a link too short for the text only the tags show
       const tws = fns.map(f => textW(f.id, true, 9) + 9), tagsW = tws.reduce((x, y) => x + y, 0) + 3 * (fns.length - 1);
-      const avail = Math.hypot(g.ex - g.sx, g.ey - g.sy) - 18, fullW = tagsW + textW(e.l, false) + 20;
+      const avail = Math.hypot(g.ex - g.sx, g.ey - g.sy) - 10, fullW = tagsW + textW(e.l, false) + 16;
       const compact = fullW > avail, w = compact ? tagsW + 8 : fullW;
       let x = -w / 2 + 4;
-      s += `${open}${live && compact ? `<title>${esc(e.l)}</title>` : ''}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill"/>`;
+      s += `${open}${live && compact ? `<title>${esc(e.l)}</title>` : ''}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${isBlank(e) ? ' todo' : ''}"/>`;
       fns.forEach((f, i) => {
         const it = isIntent(f);
         s += `<rect x="${r1(x)}" y="-6" width="${r1(tws[i])}" height="12" rx="3" fill="${it ? '#ffffff' : esc(f.color)}"${it ? ' stroke="#111111" stroke-width="1.2"' : ''}/><text x="${r1(x + tws[i] / 2)}" y=".5" class="ftag${it ? ' int' : ''}">${esc(f.id)}</text>`;
@@ -542,16 +568,16 @@ function edgeMarkup(e, live) {
 // ---------- the function table drawn on the board (exported with the figure) ----------
 const FT_W = 620, FT_ROW = 24, FT_TOP = 62;
 function callSummary(f) {
-  const m = new Map();
-  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => { if (c.f.id === f.id) { const g = m.get(c.key) || {args: c.args, n: 0}; g.n++; m.set(c.key, g); } }));
-  return [...m.values()].sort((a, b) => b.n - a.n).map(g => `${g.n}× (${g.args})`).join(' · ');
+  const k = edgesUsing(f.id).length; if (!k) return '';
+  const r = ranges(f);
+  return `${k} link${k > 1 ? 's' : ''}${r ? ' · ' + r : ''}`;
 }
 function fntableMarkup(live) {
   const T = state.fntable; if (!T || !T.show) return '';
   const list = state.functions.list, H = FT_TOP + (list.length + 1) * FT_ROW + 8;
   let s = `<rect x="-12" y="-30" width="${FT_W + 24}" height="${H + 30}" rx="6" fill="#ffffff" stroke="#d5dae0"/>`;
-  s += `<text x="0" y="0" class="lg" font-weight="700">Functions</text><text x="104" y="-1" class="ft s">same tag = same function · same text = same parameters</text>`;
-  s += `<text x="0" y="${FT_TOP - 16}" class="ft h">Function</text><text x="250" y="${FT_TOP - 16}" class="ft h">Equilibrium</text><text x="352" y="${FT_TOP - 16}" class="ft h">Used on links</text>`;
+  s += `<text x="0" y="0" class="lg" font-weight="700">Functions</text><text x="104" y="-1" class="ft s">same tag = same function · values: what each case used, ? = to fill</text>`;
+  s += `<text x="0" y="${FT_TOP - 16}" class="ft h">Function</text><text x="250" y="${FT_TOP - 16}" class="ft h">Equilibrium</text><text x="352" y="${FT_TOP - 16}" class="ft h">Links · values</text>`;
   list.forEach((f, i) => {
     const y = FT_TOP + i * FT_ROW, it = isIntent(f), used = callSummary(f);
     if (live) s += `<rect x="-6" y="${y - 12}" width="${FT_W + 12}" height="${FT_ROW}" fill="transparent" data-fn="${esc(f.id)}"/>`;
@@ -719,18 +745,24 @@ function pipelineSteps(id) {
     if (!ins.length) { out.push({t, name, root: true}); return; }
     const groups = new Map(); ins.forEach(e => { const k = e.l || '(no command)'; groups.set(k, (groups.get(k) || []).concat(ptag(byId[e.a]))); });
     let first = true;
-    groups.forEach((from, l) => { out.push({t, name: first ? name : '', expr: l, from, more: !first}); first = false; });
+    groups.forEach((from, l) => {
+      const stage = l === 'Materialize' ? 'materialize' : calls(l).some(c => isIntent(c.f)) ? 'intent' : 'geometry';
+      out.push({t, name: first ? name : '', expr: l, from, more: !first, stage, todo: first && n.todo}); first = false;
+    });
   });
   return out;
 }
-const pipelineLines = id => pipelineSteps(id).map(s => s.root ? `${s.t} = ${s.name}   # 2D prototype` : `${s.t} ${s.more ? '+=' : '='} ${s.expr} on ${s.from.join(', ')}${s.name ? `   # ${s.name}` : ''}`);
-const pipelineHTML = id => pipelineSteps(id).map(s => `<div><b>${esc(s.t)}</b> ${s.root ? '= 2D prototype' : `${s.more ? '+=' : '='} ${esc(s.expr)} <span style="color:var(--ink-2)">on ${esc(s.from.join(', '))}</span>`}${s.name ? `<br><span style="color:var(--ink-2);font-family:var(--f-ui)">${esc(s.name)}</span>` : ''}</div>`).join('');
+const pipelineLines = id => pipelineSteps(id).map(s => s.root ? `${s.t} = ${s.name}   # 2D prototype` : `${s.t} ${s.more ? '+=' : '='} ${s.expr} on ${s.from.join(', ')}${s.name ? `   # ${s.name}` : ''}${s.stage === 'intent' ? ' [intent]' : ''}${s.todo ? ' [diagram to draw]' : ''}`);
+const pipelineHTML = id => pipelineSteps(id).map(s => `<div${s.stage === 'intent' ? ' style="border-left:3px solid #111;padding-left:6px"' : ''}><b>${esc(s.t)}</b> ${s.root ? '= 2D prototype' : `${s.more ? '+=' : '='} ${esc(s.expr)} <span style="color:var(--ink-2)">on ${esc(s.from.join(', '))}</span>`}${s.name ? `<br><span style="color:var(--ink-2);font-family:var(--f-ui)">${esc(s.name)}${s.stage === 'intent' ? ' · intent' : ''}${s.todo ? ' · <span style="color:#b45309">to draw</span>' : ''}</span>` : ''}</div>`).join('');
 function pipelinesText() {
-  const L = ['# Knowledge Graph pipelines: 2D prototype → transformations → In-Between States → Materialize → built case', '', `Axes: ${state.functions.axes || ''}`, '', '## Functions'];
+  const L = ['# Knowledge Graph pipelines: 2D prototype → transformations → In-Between States → Materialize → built case', '', `Axes: ${state.functions.axes || ''}`];
+  if (state.functions.rules) L.push('', `Rules: ${state.functions.rules}`);
+  L.push('', '## Functions');
   state.functions.list.forEach(f => {
     L.push(`${f.id} ${f.sig || f.name}: ${f.def || ''}`);
     (f.steps || []).forEach((st, i) => L.push(`   ${i + 1}. ${st}`));
     L.push(`   Grasshopper: ${f.gh || '—'}. Equilibrium: ${f.eqNote || f.eq || '—'}`);
+    const r = ranges(f); if (r) L.push(`   Values used so far: ${r}`);
   });
   L.push('Materialize: from the last diagram to the built case (material, sections, joints). Not a geometric function.');
   state.nodes.filter(n => n.t === 'case').sort((a, b) => a.y - b.y).forEach(c => { L.push('', `## ${c.name || oneLine(c.label)}${c.year ? ', ' + c.year : ''}`); L.push(...pipelineLines(c.id)); });
@@ -787,9 +819,11 @@ function panelGraph() {
       <div><dt>Links</dt><dd>${state.edges.length}</dd></div>
     </dl>
   </section>
+  ${todoSection()}
   <section class="sec">
     <h3>Functions</h3>
-    <p class="note">Each transformation link is written as calls to these minimal functions, for example <span class="mono">PolarArray(Z, n=4)</span>; chain steps with →. Links that call the same function carry the same coloured tag, and the same text means the same parameters. Click a function to see its step-by-step definition and highlight its links.</p>
+    <p class="note">Each transformation link is written as calls to these minimal functions, for example <span class="mono">PolarArray(Z, n=4)</span>; chain steps with →. Links that call the same function carry the same coloured tag. The same function with the same parameter names is one template, such as <span class="mono">PolarArray(Z, n)</span>; each case adds its own value of n. Write <span class="mono">?</span> for a value still to fill and <span class="mono">≈</span> for a measured one.</p>
+    <p class="note">Every pipeline runs in three stages: geometry steps with exact rule values, then intent steps written <span class="mono">Intent(type: goal) ≈ Function(values)</span>, then Materialize.</p>
     <div class="fnlist">${state.functions.list.map(f => { const k = edgesUsing(f.id).length; return `<button data-act="sel-fn" data-id="${esc(f.id)}">${ftg(f)}<span class="sig">${esc(f.sig || f.name)}</span><span class="cnt">${k ? k + (k === 1 ? ' link' : ' links') : '—'}</span></button>`; }).join('')}</div>
     <label class="chk"><input type="checkbox" id="g-fntable" data-f="g-fntable"${state.fntable.show ? ' checked' : ''}> Show the function table on the board</label>
     <div class="btnrow"><button data-act="copy-pipes">Copy pipelines for an LLM</button><button data-act="fn-add">Add a function</button></div>
@@ -835,6 +869,17 @@ function panelGraph() {
     </ul>
   </section>`;
 }
+// what is left for you to fill: diagrams to draw and values written '?'
+function todoSection() {
+  const ns = state.nodes.filter(n => n.todo), es = state.edges.filter(e => isBlank(e) && byId[e.a] && byId[e.b]);
+  if (!ns.length && !es.length) return '';
+  return `<section class="sec">
+    <h3>To fill (${ns.length + es.length})</h3>
+    <p class="note">Dashed amber rings are diagrams to draw; dashed amber links have a value written <span class="mono">?</span>. Click one to open it.</p>
+    ${ns.length ? `<div class="field">Diagrams to draw<div class="chips">${ns.map(n => `<button data-act="sel-node" data-id="${n.id}">${esc(nodeName(n))}</button>`).join('')}</div></div>` : ''}
+    ${es.length ? `<div class="field">Values to fill<div class="chips">${es.map(e => `<button data-act="sel-edge" data-id="${e.id}">${esc(ptag(byId[e.a]))} → ${esc(ptag(byId[e.b]))}</button>`).join('')}</div></div>` : ''}
+  </section>`;
+}
 function panelNode(n) {
   if (!n) return panelGraph();
   const src = imgSrc(n), isCase = n.t === 'case', isProto = ['orig', 'core', 'adj'].includes(n.t);
@@ -844,6 +889,7 @@ function panelNode(n) {
   <section class="sec">
     <div class="kicker">${esc(TYPE_NAME[n.t])}</div>
     <h2 id="p-title">${esc(nodeName(n))}</h2>
+    ${n.todo ? `<div class="callgrp" style="border-color:#d97706;background:#fff8eb"><strong style="color:#b45309">To draw</strong><span>${esc(n.todo)}</span><span class="note">Add an image below, or use Draw for the form and force diagram. Adding an image clears this.</span><div class="row"><button data-act="todo-done">Mark as done</button></div></div>` : ''}
     <label class="field">Type<select id="n-t" data-f="t">${TYPES.map(([v, l]) => opt(v, l, n.t)).join('')}</select></label>
     ${isCase ? `
     <label class="field">Case name<input type="text" id="n-name" data-f="name" value="${esc(n.name || '')}"></label>
@@ -937,12 +983,24 @@ function panelEdge(e) {
 function callChips(e) {
   const cs = calls(e.l);
   if (!cs.length) return '<span class="note">No function from the library yet. Pick one below, or type its name and brackets.</span>';
-  return cs.map(c => { const same = edgesUsing(c.f.id, c.key).length; return `<button data-act="sel-call" data-id="${esc(c.f.id)}" data-k="${esc(c.key)}" title="Highlight every link with this exact call">${ftg(c.f)} <span class="mono">${esc(c.text)}</span>${same > 1 ? ` <small>= ${same} links</small>` : ''}</button>`; }).join('');
+  return cs.map(c => {
+    const same = edgesUsing(c.f.id, c.key).length, tpl = edgesUsing(c.f.id, c.tkey).length;
+    return `<div class="callgrp" style="width:100%"><div class="row" style="gap:6px;align-items:center">${ftg(c.f)}<span class="ct">${esc(c.text)}</span></div><div class="row">`
+      + `<button data-act="sel-call" data-id="${esc(c.f.id)}" data-k="${esc(c.tkey)}" title="Highlight every link with this template">Template ${esc(c.tpl)} · ${tpl} link${tpl > 1 ? 's' : ''}</button>`
+      + (same > 1 ? `<button data-act="sel-call" data-id="${esc(c.f.id)}" data-k="${esc(c.key)}">Same values · ${same} links</button>` : '')
+      + `</div>${c.blank ? '<span class="note" style="color:#b45309">A value here is still ? — write the number when you know it.</span>' : ''}</div>`;
+  }).join('');
 }
 function panelFn(f) {
-  const groups = new Map();
-  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => { if (c.f.id === f.id) { const g = groups.get(c.key) || {text: c.text, edges: []}; if (!g.edges.includes(e)) g.edges.push(e); groups.set(c.key, g); } }));
-  const total = edgesUsing(f.id).length;
+  // links grouped by template, then by exact values
+  const tg = new Map();
+  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => {
+    if (c.f.id !== f.id) return;
+    const t = tg.get(c.tkey) || {tpl: c.tpl, edges: [], calls: new Map()}; if (!t.edges.includes(e)) t.edges.push(e);
+    const g = t.calls.get(c.key) || {text: c.text, edges: []}; if (!g.edges.includes(e)) g.edges.push(e); t.calls.set(c.key, g); tg.set(c.tkey, t);
+  }));
+  const total = edgesUsing(f.id).length, rg = ranges(f);
+  const linkBtn = e => `<button data-act="sel-edge" data-id="${e.id}">${esc(ptag(byId[e.a]))} → ${esc(ptag(byId[e.b]))}</button>`;
   panel.innerHTML = `
   <section class="sec">
     <div class="kicker">Function ${esc(f.id)} · ${esc(f.group || '')}</div>
@@ -956,7 +1014,11 @@ function panelFn(f) {
   </section>
   <section class="sec">
     <h3>Links that call it (${total})</h3>
-    ${groups.size ? [...groups.entries()].map(([k, g]) => `<div class="callgrp"><div class="row" style="justify-content:space-between"><span class="ct">${esc(g.text)}</span><button data-act="sel-call" data-id="${esc(f.id)}" data-k="${esc(k)}"${sel.call === k ? ' aria-pressed="true"' : ''}>${g.edges.length > 1 ? `Same call on ${g.edges.length} links` : 'Highlight'}</button></div><div class="row">${g.edges.map(e => `<button data-act="sel-edge" data-id="${e.id}">${esc(ptag(byId[e.a]))} → ${esc(ptag(byId[e.b]))}</button>`).join('')}</div></div>`).join('') : '<p class="note">No link calls this function yet.</p>'}
+    ${rg ? `<p class="note" style="color:var(--ink)"><strong>Values used so far</strong> — ${esc(rg)}</p>` : ''}
+    ${tg.size ? [...tg.entries()].map(([tk, t]) => `<div class="callgrp">
+      <div class="row" style="justify-content:space-between"><span class="ct"><small style="font-family:var(--f-ui);color:var(--ink-2)">Template</small> ${esc(t.tpl)}</span><button data-act="sel-call" data-id="${esc(f.id)}" data-k="${esc(tk)}"${sel.call === tk ? ' aria-pressed="true"' : ''}>${t.edges.length} link${t.edges.length > 1 ? 's' : ''}</button></div>
+      ${[...t.calls.entries()].map(([k, g]) => `<div class="row" style="padding-left:10px;border-left:2px solid var(--line)"><span class="ct" style="flex:1 1 100%">${esc(g.text)}${g.text.includes('?') ? ' <small style="color:#b45309">to fill</small>' : ''}</span>${g.edges.length > 1 ? `<button data-act="sel-call" data-id="${esc(f.id)}" data-k="${esc(k)}"${sel.call === k ? ' aria-pressed="true"' : ''}>Same values · ${g.edges.length}</button>` : ''}${g.edges.map(linkBtn).join('')}</div>`).join('')}
+    </div>`).join('') : '<p class="note">No link calls this function yet.</p>'}
     <div class="btnrow">${sel.call ? `<button data-act="sel-fn" data-id="${esc(f.id)}">Highlight every call of ${esc(f.name)}</button>` : ''}<button data-act="desel">Done</button></div>
   </section>
   <section class="sec">
@@ -1167,6 +1229,7 @@ document.getElementById('root').addEventListener('click', ev => {
     case 'copyparent': if (n) { const par = parentOf(n), w = b.dataset.which; if (par) { edit(null, () => { n[w] = clone(par.node[w]); n[w].check = null; }); openBoard(n, w); } } break;
     case 'hide-legend': edit(null, () => { state.legend.show = false; }); renderLegend(); select({}); break;
     case 'hide-fntable': edit(null, () => { state.fntable.show = false; }); renderFntable(); select({}); break;
+    case 'todo-done': { const n = curNode(); if (n) { edit(null, () => { delete n.todo; }); updateNode(n.id); renderPanel(); } break; }
     case 'sel-fn': select({fn: b.dataset.id}); break;
     case 'sel-call': select({fn: b.dataset.id, call: b.dataset.k}); break;
     case 'desel': select({}); break;
@@ -1348,7 +1411,7 @@ async function setNodeImage(id, file) {
   const n = byId[id]; if (!n) { statusUI(); return; }
   const ar = await imageAR(file);
   // sketches show whole inside the circle; photos of built cases fill it
-  edit(null, () => { n.img = Object.assign({z: 1, ox: 0, oy: 0}, n.t === 'case' ? {} : {fit: 'contain'}, ar ? {ar} : {}, img); });
+  edit(null, () => { n.img = Object.assign({z: 1, ox: 0, oy: 0}, n.t === 'case' ? {} : {fit: 'contain'}, ar ? {ar} : {}, img); delete n.todo; });
   updateNode(id); drawOverlay(); statusUI();
   if (curNode() && curNode().id === id) renderPanel();
   toast(`Image placed in “${nodeName(n)}”.`);
