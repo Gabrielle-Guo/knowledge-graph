@@ -59,7 +59,8 @@ main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1
 #cv { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; background: var(--bg); }
 #cv.panning { cursor: grabbing; }
 #cv.connect, #cv.connect .nd { cursor: crosshair; }
-#cv .nd, #cv [data-legend] { cursor: move; }
+#cv .nd, #cv [data-legend], #cv [data-fntable] { cursor: move; }
+#cv [data-fn] { cursor: pointer; }
 #cv .hit { stroke: transparent; stroke-width: 18; fill: none; pointer-events: stroke; cursor: pointer; }
 #cv [data-e] { cursor: pointer; }
 .ov { pointer-events: none; }
@@ -157,6 +158,21 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .legend-k { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-2); }
 .legend-k span { display: inline-flex; align-items: center; gap: 5px; }
 .legend-k i { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
+/* function library */
+.ov .hl { fill: none; stroke-width: 12; stroke-opacity: .32; stroke-linecap: round; }
+.ftg { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 18px; padding: 0 5px; border-radius: 4px; font: 700 11px/1 var(--f-mono); color: #fff; flex: none; }
+.ftg.int { background: #fff !important; color: #111; border: 1.5px solid #111; }
+.fnlist { display: flex; flex-direction: column; gap: 4px; }
+.fnlist button { justify-content: flex-start; text-align: left; white-space: normal; gap: 8px; font-size: 13px; min-height: 32px; }
+.fnlist button[aria-pressed="true"] { font-weight: 400; color: var(--ink); }
+.fnlist .sig { font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere; flex: 1; min-width: 0; }
+.fnlist .cnt { font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.callgrp { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.callgrp .ct { font-family: var(--f-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.callgrp .row { gap: 6px; }
+.callgrp .row button { font-size: 12px; min-height: 26px; padding: 2px 8px; }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.45; }
+.prog { font-family: var(--f-mono); font-size: 11.5px; line-height: 1.55; background: var(--surface-2); border-radius: 6px; padding: 8px 10px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 16px; border-radius: 8px; font-size: 13.5px; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); z-index: 50; }
 @media (max-width: 820px) {
   .ed { overflow-y: auto; }
@@ -242,7 +258,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </div>
-<script type="application/json" id="graph-data">{"v": 1, "savedAt": "", "board": {"w": 2180, "h": 1460}, "legend": {"x": 1905, "y": 330, "show": true}, "opts": {"captions": true, "snap": false, "pngScale": 2, "arrow": "none"}, "nodes": [], "edges": []}</script>
+<script type="application/json" id="graph-data">{"v":2,"savedAt":"","board":{"w":2180,"h":1460},"legend":{"x":1905,"y":330,"show":true},"opts":{"captions":true,"snap":false,"pngScale":2,"arrow":"end"},"nodes":[],"edges":[]}</script>
 <script id="app">
 (() => {
 'use strict';
@@ -265,18 +281,45 @@ let inFrame = true; try { inFrame = window.self !== window.top; } catch (e) { in
 ['artifact', 'assets', 'downloads'].forEach(k => use(k).then(v => { CAP[k] = v; capsUI(); }));
 
 // ---------- state ----------
+// The function library: minimal, named steps (like Grasshopper components) that a link's command calls, e.g. PolarArray(Z, n=4).
+const FN_DEFAULT = {"axes":"X = span, Y = depth, Z = up (as in Rhino). 2D prototypes are drawn in the XZ plane, so a turn inside the drawing is a rotation about Y. 'tip' is the single corner opposite the two supports or loads; 'top', 'base', 'legs', 'ring', 'twigs' name the other parts.","list":[{"id":"F1","name":"Divide","sig":"Divide(member, n)","color":"#8a6500","group":"Nodes and members","def":"Split a member into n equal segments by adding n − 1 nodes on it.","steps":["Pick the member a–b.","Add the nodes p_i = a + (i/n)(b − a) for i = 1 … n − 1.","Replace a–b by the n short members a–p_1, …, p_(n−1)–b."],"gh":"Divide Curve","eq":"kept","eqNote":"Kept: the new nodes are straight-through joints. Putting loads on them is part of the next step."},{"id":"F2","name":"Move","sig":"Move(nodes, vector)","color":"#c2410c","group":"Nodes and members","def":"Translate the chosen nodes; the members attached to them follow.","steps":["Pick the nodes S.","Move each node p in S to p + v.","Members keep their end nodes, so they stretch and turn."],"gh":"Move","eq":"re-check","eqNote":"Re-check: member directions change, so the forces change, and a C member can turn into T."},{"id":"F3","name":"Truncate","sig":"Truncate(node, t)","color":"#6d28d9","group":"Nodes and members","def":"Cut a corner: replace node v by two nodes on its two members and join them with a new member.","steps":["Pick the corner v and its two members v–a and v–b.","Mark the points at fraction t from v: v1 = v + t(a − v), v2 = v + t(b − v). With t = 0.5 they are the midpoints of the two sides.","Connect v1–v2 with a new member.","Give the load or support at v to v1 and v2, half each.","Remove v and the short members v–v1, v–v2."],"gh":"Evaluate Curve (t) + Line + Cull","eq":"re-check","eqNote":"Re-check: the new member takes the force that turned the corner. It is C where the sides push (arch, V-strut) and T where they pull (cable). The trapezoid is balanced for the two equal loads that replace the single one."},{"id":"F4","name":"Branch","sig":"Branch(node, k, t)","color":"#7a4b1e","group":"Nodes and members","def":"Gather the members of a fan into k groups; each group meets at a new branch node that is joined back to the fan node by one member.","steps":["Pick the fan node v and its members.","Split the members into k groups (k = 2: left | right halves; k = 3: symmetric pairs).","For each group add a branch node at fraction t along the group's mean direction from v.","Re-attach the group's members from v to its branch node.","Connect v to each branch node."],"gh":"Move + Line","eq":"re-check","eqNote":"Re-check: each branch node must balance its group. A branch is straight under load when it points along the resultant of its group's loads."},{"id":"F5","name":"Extend","sig":"Extend(node, direction, to)","color":"#4d7c0f","group":"Nodes and members","def":"Add a new member from a node along a direction until it reaches a target (the ground or a length L); its far end becomes a support.","steps":["Pick the node v and the direction d (for example −Z).","Add the node e where the ray v + s·d meets the target.","Connect v–e.","The support at v moves to e (or e becomes a new support)."],"gh":"Line SDL","eq":"re-check","eqNote":"Re-check: the new member carries what the support used to take at v — C for a mast or column, T for a hanger."},{"id":"F6","name":"Remove","sig":"Remove(members)","color":"#6b7280","group":"Nodes and members","def":"Delete the chosen members (or nodes with their members).","steps":["Pick the members (or nodes) to delete.","Delete them; a node left with no members is deleted too."],"gh":"Cull","eq":"re-check","eqNote":"Re-check: the structure may turn into a mechanism or need new supports. Removing an arch's tie sends its thrust to the supports."},{"id":"F7","name":"Connect","sig":"Connect(a, b | ring)","color":"#334155","group":"Nodes and members","def":"Add a member between two existing nodes, or a closed ring through a list of nodes.","steps":["Pick the nodes a and b, or the ring a_1 … a_n.","Add the member a–b (for a ring: a_1–a_2, …, a_n–a_1)."],"gh":"Line / Polyline (closed)","eq":"re-check","eqNote":"Re-check: adds a load path. A ring at splayed feet collects their outward push in T; a ring at a waist collects an inward pull in C."},{"id":"F8","name":"Scale","sig":"Scale(sx, sz, origin)","color":"#be185d","group":"Whole diagram","def":"Stretch the whole diagram about an origin, with different factors per axis if needed.","steps":["Pick the origin o and the factors (sx, sy, sz).","Move every node p to o + (sx(p − o)_x, sy(p − o)_y, sz(p − o)_z)."],"gh":"Scale NU","eq":"kept","eqNote":"Kept, with C and T unchanged (a parallel projection, Rankine). Force sizes change: in a 2D drawing vertical loads scale by sz/sx."},{"id":"F9","name":"Rotate","sig":"Rotate(axis, θ, loads)","color":"#4338ca","group":"Whole diagram","def":"Turn the diagram, or the part named first, about an axis by θ.","steps":["Pick what turns (default: everything), the axis and the angle θ.","Rotate the nodes about the axis.","Loads turn with the shape by default; write 'gravity' when they stay vertical."],"gh":"Rotate / Rotate Axis / Rotate 3D","eq":"kept","eqNote":"Kept when the loads turn too (a rigid motion): every force is unchanged. With 'gravity' the loads keep pointing down, so re-check — a bar can switch from C to T."},{"id":"F10","name":"Mirror","sig":"Mirror(plane)","color":"#0e7490","group":"Whole diagram","def":"Reflect the diagram in a plane.","steps":["Pick the plane (vertical YZ, or horizontal XY).","Reflect every node in it.","Loads keep pointing down."],"gh":"Mirror","eq":"kept, C↔T","eqNote":"In a vertical plane: kept, forces unchanged. In a horizontal plane with loads still pointing down, every force changes sign, C↔T: Hooke's hanging chain turns an arch into a cable. Mirror(XY) = FlipLoad ∘ Rotate(Y, 180°) for a symmetric shape, so P1 → P4."},{"id":"F11","name":"FlipLoad","sig":"FlipLoad()","color":"#a21caf","group":"Whole diagram","def":"Reverse every load, and so every reaction.","steps":["Multiply every load vector by −1.","Supports stay where they are; their reactions reverse too."],"gh":"Negative (vector × −1)","eq":"kept, C↔T","eqNote":"Kept, and every member force changes sign: C becomes T and T becomes C."},{"id":"F12","name":"Array","sig":"Array(direction, n, d)","color":"#0f766e","group":"Copies and combination","def":"Make n copies spaced d along a direction; copies that touch share nodes.","steps":["Pick the direction (X, Y or Z), the count n and the spacing d (default: the width, so copies just touch).","Copy the diagram n − 1 times, each moved by d.","Merge nodes that coincide."],"gh":"Linear Array","eq":"kept per copy","eqNote":"Each copy is balanced on its own. Where copies share nodes their forces add; when d is less than the width the copies overlap, so re-check."},{"id":"F13","name":"PolarArray","sig":"PolarArray(axis, n)","color":"#9f1239","group":"Copies and combination","def":"Make n copies turned by 360°/n about an axis (Z = vertical).","steps":["Pick the axis and the count n.","Copy the diagram n − 1 times, each turned a further 360°/n.","Merge nodes on the axis and any that coincide."],"gh":"Polar Array","eq":"re-check rings","eqNote":"Each copy stays balanced in its own plane. At shared nodes (the axis, the rings) the forces add, so check them; splayed feet need a ring."},{"id":"F14","name":"Superpose","sig":"Superpose(A, B, …)","color":"#1e3a8a","group":"Copies and combination","def":"Overlay diagrams in one frame, merge the nodes that coincide and add their loads.","steps":["Place each diagram as stated (stack along an axis, cross on an axis, or overlap).","Merge coincident nodes; a member shared by two diagrams carries the sum of their forces.","Add the loads at each merged node."],"gh":"Merge + Combine & Clean","eq":"re-check","eqNote":"If every part is balanced and they meet only at nodes, the sum is balanced (superposition). New contacts or merged members need a re-check."},{"id":"F15","name":"Intent","sig":"Intent(goal) ≈ f(…)","color":"#ffffff","group":"Architectural intent","def":"A step driven by an architectural purpose that no single function captures. Record the goal in words, then the nearest function and its parameters.","steps":["Write the goal: who or what the change is for.","Write ≈ and the nearest function call, for example Move(one side, +X).","Draw the result and re-check it."],"gh":"—","eq":"re-check","eqNote":"Always re-check. The nearest function tells you which check applies."}]};
+const clone = o => JSON.parse(JSON.stringify(o));
+function normalize(st) {
+  st.opts = Object.assign({captions: true, snap: false, pngScale: 2, arrow: 'none'}, st.opts || {});
+  st.legend = st.legend || {x: 1905, y: 330, show: true};
+  st.board = st.board || {w: 2180, h: 1460};
+  if (!st.functions || !Array.isArray(st.functions.list)) st.functions = clone(FN_DEFAULT || {axes: '', list: []});
+  if (!st.fntable) st.fntable = {x: st.legend.x - 10, y: st.legend.y + 790, show: st.edges.some(e => /\(/.test(e.l || ''))};
+  return st;
+}
 const embedded = JSON.parse(document.getElementById('graph-data').textContent);
 let state = embedded, restored = false;
 try {
   const d = JSON.parse(localStorage.getItem(DKEY) || 'null');
   if (d && d.base === embedded.savedAt && d.state && Array.isArray(d.state.nodes)) { state = d.state; restored = true; }
 } catch (e) { /* storage unavailable */ }
-state.opts = Object.assign({captions: true, snap: false, pngScale: 2, arrow: 'none'}, state.opts || {});
-let byId = {};
-const reindex = () => { byId = Object.fromEntries(state.nodes.map(n => [n.id, n])); };
+normalize(state);
+let byId = {}, fnByName = {}, fnById = {};
+const callCache = new Map();
+const reindex = () => {
+  byId = Object.fromEntries(state.nodes.map(n => [n.id, n]));
+  fnByName = {}; fnById = {}; callCache.clear();
+  state.functions.list.forEach(f => { fnByName[String(f.name).toLowerCase()] = f; fnById[f.id] = f; });
+};
 reindex();
+// function calls written in a command: Name(args). The same text (ignoring spaces and case) means the same parameters.
+const CALL_RE = /([A-Za-z][A-Za-z0-9]*)\s*\(([^()]*)\)/g;
+function calls(l) {
+  l = String(l || ''); if (callCache.has(l)) return callCache.get(l);
+  const out = []; let m; CALL_RE.lastIndex = 0;
+  while ((m = CALL_RE.exec(l))) { const f = fnByName[m[1].toLowerCase()]; if (f) out.push({f, text: m[0], args: m[2].trim(), key: m[0].replace(/\s+/g, '').toLowerCase()}); }
+  callCache.set(l, out); return out;
+}
+const edgeFns = e => e.k === 'mat' ? [] : [...new Map(calls(e.l).map(c => [c.f.id, c.f])).values()];
+const edgesUsing = (fid, key) => state.edges.filter(e => e.k !== 'mat' && calls(e.l).some(c => c.f.id === fid && (!key || c.key === key)));
+const isIntent = f => f && String(f.name).toLowerCase() === 'intent';
 let dirty = restored, baseKey = embedded.savedAt, submitView = false;
-let sel = {nodes: new Set(), edge: null, legend: false};
+let sel = {nodes: new Set(), edge: null, legend: false, fn: null, call: null, fntable: false};
 let mode = 'select', connectFrom = null, preview = null, drag = null, dropTarget = null;
 const undoS = [], redoS = [];
 let lastKey = null, lastT = 0;
@@ -288,8 +331,10 @@ ${p}.t{stroke:#c8323a;stroke-width:2.8;fill:none;stroke-linecap:round;stroke-lin
 ${p}.f{stroke:#22a05a;stroke-width:2.2;fill:none}${p}.fh{fill:#22a05a}${p}.s{fill:#5b636e}
 ${p}.lk{stroke:#c4c8ce;stroke-width:7;stroke-linecap:round;fill:none}${p}.lk.mat{stroke:#3a3f45;stroke-width:3}${p}.lk.comb{stroke:#6b717a;stroke-width:1.8}
 ${p}.pill{fill:#c4c8ce}${p}.pill.mat{fill:#111111}
-${p}.ptxt{font-size:10.5px;fill:#30353b;text-anchor:middle;dominant-baseline:central}${p}.ptxt.mat{fill:#ffffff;font-weight:700}
-${p}.nl{font-size:11.5px;text-anchor:middle}${p}.nl.b{font-weight:700}
+${p}.ptxt{font-size:10.5px;fill:#30353b;text-anchor:middle;dominant-baseline:central}${p}.ptxt.mat{fill:#ffffff;font-weight:700}${p}.ptxt.l{text-anchor:start}
+${p}.ftag{font-size:9px;font-weight:700;fill:#ffffff;text-anchor:middle;dominant-baseline:central}${p}.ftag.int{fill:#111111}
+${p}.ft{font-size:12px}${p}.ft.s{fill:#5b636e;font-size:11px}${p}.ft.h{font-size:11px;fill:#5b636e;text-transform:uppercase;letter-spacing:.06em}${p}.ft.m{font-family:Consolas,"Courier New",monospace;font-size:11.5px}
+${p}.nl{font-size:11.5px;text-anchor:middle}${p}.nl.b{font-weight:700}${p}.out{paint-order:stroke;stroke:#ffffff;stroke-width:3.5px;stroke-linejoin:round}
 ${p}.cl{font-size:11px;text-anchor:middle;font-weight:700}${p}.cy{font-size:10px;text-anchor:middle;fill:#5b636e}
 ${p}.lg{font-size:17px}`;
 const MARKERS = [['tr', 20, '#b8bdc4'], ['mat', 14, '#3a3f45'], ['comb', 11, '#6b717a']].map(([k, s, c]) =>
@@ -360,39 +405,55 @@ const oneLine = s => String(s || '').replace(/-\n/g, '-').replace(/\n/g, ' ').tr
 const wrap = (s, w = 11) => { const out = []; let cur = ''; for (const x of String(s).split(/\s+/)) { if (cur && (cur + ' ' + x).length > w) { out.push(cur); cur = x; } else cur = cur ? cur + ' ' + x : x; } if (cur) out.push(cur); return out.slice(0, 4).join('\n'); };
 const mctx = document.createElement('canvas').getContext('2d');
 const tw = new Map();
-const textW = (t, bold) => { const k = (bold ? 'b' : '') + t; if (!tw.has(k)) { mctx.font = `${bold ? '700 ' : ''}10.5px Calibri, Carlito, "Segoe UI", "Helvetica Neue", Arial, sans-serif`; tw.set(k, mctx.measureText(t).width); } return tw.get(k); };
+const textW = (t, bold, size = 10.5, mono) => { const k = (bold ? 'b' : '') + size + (mono ? 'm' : '') + '|' + t; if (!tw.has(k)) { mctx.font = `${bold ? '700 ' : ''}${size}px ${mono ? 'Consolas, "Courier New", monospace' : 'Calibri, Carlito, "Segoe UI", "Helvetica Neue", Arial, sans-serif'}`; tw.set(k, mctx.measureText(t).width); } return tw.get(k); };
+const fitText = (t, max, size, mono) => { t = String(t); if (textW(t, false, size, mono) <= max) return t; while (t.length > 1 && textW(t + '…', false, size, mono) > max) t = t.slice(0, -1); return t + '…'; };
 const imgSrc = n => n.img ? (n.img.asset ? '/_blob/' + n.img.asset : n.img.src) : null;
 let toastT = 0;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3600); }
 
 // ---------- node, edge, legend markup ----------
+// 'contain' shows the whole image inside the circle (sketches); otherwise the image fills the circle and is cropped (photos)
+const isContain = n => !!(n.img && n.img.fit === 'contain');
 function imgMarkup(n, R, src, exp) {
-  const z = n.img.z || 1, s = 2 * R * z, ox = (n.img.ox || 0) * R, oy = (n.img.oy || 0) * R;
+  const im = n.img, z = im.z || 1, ox = (im.ox || 0) * R, oy = (im.oy || 0) * R;
   const href = exp ? `xlink:href="${esc(src)}"` : `href="${esc(src)}"`;
-  return `<clipPath id="k-${n.id}"><circle r="${R}"/></clipPath><image ${href} x="${r1(-s / 2 + ox)}" y="${r1(-s / 2 + oy)}" width="${r1(s)}" height="${r1(s)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#k-${n.id})"/>`;
+  let w = 2 * R * z, h = w, par = 'xMidYMid slice';
+  if (im.fit === 'contain') {
+    par = 'xMidYMid meet';
+    if (im.ar > 0) { w = 2 * R * 1.04 * z / Math.sqrt(1 + 1 / (im.ar * im.ar)); h = w / im.ar; } else { w = h = 1.414 * R * z; }
+  }
+  return `<clipPath id="k-${n.id}"><circle r="${R}"/></clipPath><image ${href} x="${r1(-w / 2 + ox)}" y="${r1(-h / 2 + oy)}" width="${r1(w)}" height="${r1(h)}" preserveAspectRatio="${par}" clip-path="url(#k-${n.id})"/>`;
 }
-function textBelow(lines, r, cls, year) {
-  let s = '', y = r + 16;
-  lines.forEach(l => { s += `<text y="${y}" class="${cls}">${esc(l)}</text>`; y += 12.5; });
-  if (year) s += `<text y="${y + 1}" class="cy">${esc(year)}</text>`;
-  return s;
+// caption side: below unless a link leaves that way; then the side (above, right, left) furthest from every link
+function capSide(n) {
+  if (n.capPos) return n.capPos;
+  const dirs = [];
+  state.edges.forEach(e => {
+    if (e.a !== n.id && e.b !== n.id) return;
+    const g = edgeGeom(e), o = byId[e.a === n.id ? e.b : e.a]; if (!g || !o) return;
+    const tx = g.curved ? g.cx : o.x, ty = g.curved ? g.cy : o.y; dirs.push(Math.atan2(ty - n.y, tx - n.x));
+  });
+  let best = 'below', bs = -1;
+  [['below', Math.PI / 2, 0.35], ['above', -Math.PI / 2, 0.15], ['right', 0, 0], ['left', Math.PI, 0]].forEach(([k, a, bias]) => {
+    const m = dirs.length ? Math.min(...dirs.map(d => { const x = Math.abs(d - a) % (2 * Math.PI); return x > Math.PI ? 2 * Math.PI - x : x; })) : Math.PI;
+    if (m + bias > bs) { bs = m + bias; best = k; }
+  });
+  return best;
 }
-// caption on the side facing away from the linked In-Between State, so it never sits on the incoming link
-function captionOut(n, lines, r) {
-  const e = state.edges.find(x => x.b === n.id) || state.edges.find(x => x.a === n.id);
-  const o = e && byId[e.a === n.id ? e.b : e.a];
-  let ux = 0, uy = 1;
-  if (o) { const d = Math.hypot(n.x - o.x, n.y - o.y) || 1; ux = (n.x - o.x) / d; uy = (n.y - o.y) / d; }
-  const rows = lines.map(l => [l, 'cl']).concat(n.year ? [[n.year, 'cy']] : []), lh = 12.5;
+// rows: [[text, class], …] placed outside the circle on its free side, with a white halo so a link under it stays readable
+function caption(n, rows, r) {
+  const lh = 12.5, side = capSide(n);
   let x = 0, y, anchor = '';
-  if (uy > 0.6) y = r + 16;
-  else if (uy < -0.6) y = -r - 8 - (rows.length - 1) * lh;
-  else { x = ux > 0 ? r + 8 : -r - 8; anchor = ux > 0 ? 'start' : 'end'; y = -(rows.length - 1) * lh / 2 + 4; }
-  return rows.map(([t, c], i) => `<text x="${x}" y="${r1(y + i * lh)}" class="${c}"${anchor ? ` style="text-anchor:${anchor}"` : ''}>${esc(t)}</text>`).join('');
+  if (side === 'below') y = r + 16;
+  else if (side === 'above') y = -r - 8 - (rows.length - 1) * lh;
+  else { x = side === 'right' ? r + 8 : -r - 8; anchor = side === 'right' ? 'start' : 'end'; y = -(rows.length - 1) * lh / 2 + 4; }
+  return rows.map(([t, c], i) => `<text x="${x}" y="${r1(y + i * lh)}" class="${c} out"${anchor ? ` style="text-anchor:${anchor}"` : ''}>${esc(t)}</text>`).join('');
 }
+const captionOut = (n, lines, r) => caption(n, lines.map(l => [l, 'cl']).concat(n.year ? [[n.year, 'cy']] : []), r);
 function nodeInner(n, exp, srcOverride) {
   const r = n.r, src = srcOverride !== undefined ? srcOverride : imgSrc(n);
   const lines = String(n.label || '').split('\n').filter(l => l.length);
+  const code = n.code ? [[n.code, 'nl b']] : [];
   let s = '';
   if (n.t === 'case') {
     s += `<circle r="${r}" fill="#ffffff" stroke="#2a2e33" stroke-width="1.6"/>`;
@@ -408,20 +469,24 @@ function nodeInner(n, exp, srcOverride) {
     }
   } else if (n.t === 'ib') {
     s += `<circle r="${r}" fill="#ffffff" stroke="#2a2e33" stroke-width="1.4"/>`;
-    if (src) s += imgMarkup(n, r - 1, src, exp) + `<circle r="${r}" fill="none" stroke="#2a2e33" stroke-width="1.4"/>`;
+    if (src) s += imgMarkup(n, isContain(n) ? r - 3 : r - 1, src, exp) + `<circle r="${r}" fill="none" stroke="#2a2e33" stroke-width="1.4"/>`;
     else if (G[n.glyph]) { const b = r * 1.49; s += `<g transform="translate(${r1(-b / 2)},${r1(-b / 2)}) scale(${(b / 100).toFixed(4)})">${G[n.glyph]}</g>`; }
-    if (n.cap) s += textBelow(lines, r - 2, 'nl', '');
+    if (n.cap) s += caption(n, code.concat(lines.map(l => [l, 'nl'])), r - 2);
   } else {
     const fill = n.t === 'orig' ? '#c3c7cd' : '#eceef1', stroke = n.t === 'core' ? '#2a2e33' : '#9aa1aa', sw = n.t === 'core' ? 2.8 : 1.2;
     const cls = 'nl' + (n.t !== 'adj' ? ' b' : '');
     s += `<circle r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
     if (src) {
-      s += imgMarkup(n, r - sw / 2, src, exp) + `<circle r="${r}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>` + textBelow(lines, r - 2, cls, '');
+      // a whole sketch sits on a white disc inside a band in the prototype's colour
+      if (isContain(n)) s += `<circle r="${r - 6}" fill="#ffffff"/>` + imgMarkup(n, r - 6, src, exp) + `<circle r="${r - 6}" fill="none" stroke="${stroke}" stroke-width="0.8"/>`;
+      else s += imgMarkup(n, r - sw / 2, src, exp);
+      s += `<circle r="${r}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>` + caption(n, code.concat(lines.map(l => [l, cls])), r - 2);
     } else {
+      const rows = code.concat(lines.map(l => [l, cls]));
       if (G[n.glyph]) { const b = r * 1.08, oy = -r * 0.24; s += `<g transform="translate(${r1(-b / 2)},${r1(-b / 2 + oy)}) scale(${(b / 100).toFixed(4)})">${G[n.glyph]}</g>`; }
-      let y = r * 0.55 - (lines.length > 1 ? 4 : 0);
-      if (!G[n.glyph]) y = -(lines.length - 1) * 6 + 4;
-      lines.forEach(l => { s += `<text y="${r1(y)}" class="${cls}">${esc(l)}</text>`; y += 12; });
+      let y = r * 0.55 - (rows.length > 1 ? 4 : 0);
+      if (!G[n.glyph]) y = -(rows.length - 1) * 6 + 4;
+      rows.forEach(([l, c]) => { s += `<text y="${r1(y)}" class="${c}">${esc(l)}</text>`; y += 12; });
     }
   }
   return s;
@@ -451,11 +516,55 @@ function edgeMarkup(e, live) {
     if (g.curved) { px = u * u * g.sx + 2 * u * t * g.cx + t * t * g.ex; py = u * u * g.sy + 2 * u * t * g.cy + t * t * g.ey; tx = 2 * u * (g.cx - g.sx) + 2 * t * (g.ex - g.cx); ty = 2 * u * (g.cy - g.sy) + 2 * t * (g.ey - g.cy); }
     else { px = g.sx + (g.ex - g.sx) * t; py = g.sy + (g.ey - g.sy) * t; tx = g.ex - g.sx; ty = g.ey - g.sy; }
     let a = Math.atan2(ty, tx) * 180 / Math.PI; if (a > 90) a -= 180; if (a < -90) a += 180;
-    const mat = k === 'mat', w = Math.max(mat ? 64 : 40, textW(e.l, mat) + 16);
-    s += `<g transform="translate(${r1(px)},${r1(py)}) rotate(${r1(a)})"${live ? ` data-e="${e.id}"` : ''}><rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${mat ? ' mat' : ''}"/><text y=".5" class="ptxt${mat ? ' mat' : ''}">${esc(e.l)}</text></g>`;
+    const mat = k === 'mat', fns = edgeFns(e);
+    const open = `<g transform="translate(${r1(px)},${r1(py)}) rotate(${r1(a)})"${live ? ` data-e="${e.id}"` : ''}>`;
+    if (!fns.length) {
+      const w = Math.max(mat ? 64 : 40, textW(e.l, mat) + 16);
+      s += `${open}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill${mat ? ' mat' : ''}"/><text y=".5" class="ptxt${mat ? ' mat' : ''}">${esc(e.l)}</text></g>`;
+    } else {
+      // coloured function tags, then the call text; on a link too short for the text only the tags show
+      const tws = fns.map(f => textW(f.id, true, 9) + 9), tagsW = tws.reduce((x, y) => x + y, 0) + 3 * (fns.length - 1);
+      const avail = Math.hypot(g.ex - g.sx, g.ey - g.sy) - 18, fullW = tagsW + textW(e.l, false) + 20;
+      const compact = fullW > avail, w = compact ? tagsW + 8 : fullW;
+      let x = -w / 2 + 4;
+      s += `${open}${live && compact ? `<title>${esc(e.l)}</title>` : ''}<rect x="${r1(-w / 2)}" y="-8" width="${r1(w)}" height="16" rx="8" class="pill"/>`;
+      fns.forEach((f, i) => {
+        const it = isIntent(f);
+        s += `<rect x="${r1(x)}" y="-6" width="${r1(tws[i])}" height="12" rx="3" fill="${it ? '#ffffff' : esc(f.color)}"${it ? ' stroke="#111111" stroke-width="1.2"' : ''}/><text x="${r1(x + tws[i] / 2)}" y=".5" class="ftag${it ? ' int' : ''}">${esc(f.id)}</text>`;
+        x += tws[i] + 3;
+      });
+      if (!compact) s += `<text x="${r1(x + 3)}" y=".5" class="ptxt l">${esc(e.l)}</text>`;
+      s += '</g>';
+    }
   }
-  return `<g>${s}</g>`;
+  return `<g${live ? ` data-eg="${e.id}"` : ''}>${s}</g>`;
 }
+// ---------- the function table drawn on the board (exported with the figure) ----------
+const FT_W = 620, FT_ROW = 24, FT_TOP = 62;
+function callSummary(f) {
+  const m = new Map();
+  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => { if (c.f.id === f.id) { const g = m.get(c.key) || {args: c.args, n: 0}; g.n++; m.set(c.key, g); } }));
+  return [...m.values()].sort((a, b) => b.n - a.n).map(g => `${g.n}× (${g.args})`).join(' · ');
+}
+function fntableMarkup(live) {
+  const T = state.fntable; if (!T || !T.show) return '';
+  const list = state.functions.list, H = FT_TOP + (list.length + 1) * FT_ROW + 8;
+  let s = `<rect x="-12" y="-30" width="${FT_W + 24}" height="${H + 30}" rx="6" fill="#ffffff" stroke="#d5dae0"/>`;
+  s += `<text x="0" y="0" class="lg" font-weight="700">Functions</text><text x="104" y="-1" class="ft s">same tag = same function · same text = same parameters</text>`;
+  s += `<text x="0" y="${FT_TOP - 16}" class="ft h">Function</text><text x="250" y="${FT_TOP - 16}" class="ft h">Equilibrium</text><text x="352" y="${FT_TOP - 16}" class="ft h">Used on links</text>`;
+  list.forEach((f, i) => {
+    const y = FT_TOP + i * FT_ROW, it = isIntent(f), used = callSummary(f);
+    if (live) s += `<rect x="-6" y="${y - 12}" width="${FT_W + 12}" height="${FT_ROW}" fill="transparent" data-fn="${esc(f.id)}"/>`;
+    if (sel.fn === f.id && live) s += `<rect x="-6" y="${y - 12}" width="${FT_W + 12}" height="${FT_ROW}" rx="4" fill="${esc(f.color)}" fill-opacity=".12" pointer-events="none"/>`;
+    s += `<g pointer-events="none"><rect x="0" y="${y - 8}" width="32" height="16" rx="3" fill="${it ? '#ffffff' : esc(f.color)}"${it ? ' stroke="#111111" stroke-width="1.2"' : ''}/><text x="16" y="${y + .5}" class="ftag${it ? ' int' : ''}" font-size="10">${esc(f.id)}</text>`;
+    s += `<text x="40" y="${y + 4}" class="ft m">${esc(fitText(f.sig || f.name, 204, 11.5, true))}</text><text x="250" y="${y + 4}" class="ft s">${esc(fitText(f.eq || '', 96, 11))}</text>`;
+    s += `<text x="352" y="${y + 4}" class="ft${used ? '' : ' s'}">${esc(used ? fitText(used, FT_W - 352, 12) : '—')}</text></g>`;
+  });
+  const y = FT_TOP + list.length * FT_ROW;
+  s += `<g pointer-events="none"><rect x="0" y="${y - 8}" width="58" height="16" rx="8" class="pill mat"/><text x="29" y="${y + .5}" class="ptxt mat" font-size="8.5">Materialize</text><text x="66" y="${y + 4}" class="ft s">diagram → built case: material, sections, joints</text></g>`;
+  return `<g${live ? ' data-fntable="1"' : ''} transform="translate(${r1(T.x)},${r1(T.y)})">${s}</g>`;
+}
+const fntableBox = () => { const T = state.fntable; return {x: T.x - 12, y: T.y - 30, w: FT_W + 24, h: FT_TOP + (state.functions.list.length + 1) * FT_ROW + 38}; };
 function legendMarkup(live) {
   const L = state.legend; if (!L || !L.show) return '';
   let s = live ? '<rect x="-4" y="-46" width="296" height="720" fill="transparent"/>' : '';
@@ -470,7 +579,7 @@ function legendMarkup(live) {
     if (pc) s += `<rect x="20" y="${y - 7.5}" width="58" height="15" rx="7.5" class="${pc}"/><text x="49" y="${y + .5}" class="ptxt${pc.includes('mat') ? ' mat' : ''}" font-size="8.5">${pt}</text>`;
     s += `<text x="104" y="${y + 5}" class="lg">${label}</text>`;
   };
-  row(460, 'lk', 'pill', 'command', 'Transformation');
+  s += `<line x1="4" y1="460" x2="94" y2="460" class="lk"/><rect x="14" y="452.5" width="72" height="15" rx="7.5" class="pill"/><rect x="18" y="454.5" width="20" height="11" rx="2.5" fill="#6d28d9"/><text x="28" y="460.5" class="ftag" font-size="8">F#</text><text x="42" y="460.5" class="ptxt l" font-size="8.5">function</text><text x="104" y="465" class="lg">Transformation</text>`;
   row(500, 'lk mat', 'pill mat', 'Materialize', 'Materialization');
   row(540, 'lk comb', '', '', 'Combination');
   row(585, 'f', '', '', 'External force');
@@ -481,8 +590,8 @@ function legendMarkup(live) {
 
 // ---------- canvas ----------
 const cv = $('cv');
-cv.innerHTML = `<defs><style>${figCSS('.fg ')}</style>${MARKERS}</defs><rect class="board" id="board" x="0" y="0" fill="#ffffff"/><g id="L-edges"></g><g id="L-nodes"></g><g id="L-legend"></g><g id="L-over" class="ov"></g>`;
-const L_edges = $('L-edges'), L_nodes = $('L-nodes'), L_legend = $('L-legend'), L_over = $('L-over');
+cv.innerHTML = `<defs><style>${figCSS('.fg ')}</style>${MARKERS}</defs><rect class="board" id="board" x="0" y="0" fill="#ffffff"/><g id="L-edges"></g><g id="L-nodes"></g><g id="L-legend"></g><g id="L-fntable"></g><g id="L-over" class="ov"></g>`;
+const L_edges = $('L-edges'), L_nodes = $('L-nodes'), L_legend = $('L-legend'), L_fntable = $('L-fntable'), L_over = $('L-over');
 let cam = {x: -40, y: -40, w: 2260, h: 1540};
 function applyCam() {
   cv.setAttribute('viewBox', `${r1(cam.x)} ${r1(cam.y)} ${r1(cam.w)} ${r1(cam.h)}`);
@@ -512,7 +621,8 @@ const toWorld = ev => { const r = cv.getBoundingClientRect(); return {x: cam.x +
 function renderBoard() { const b = $('board'); b.setAttribute('width', state.board.w); b.setAttribute('height', state.board.h); }
 function renderEdges() { L_edges.innerHTML = state.edges.map(e => edgeMarkup(e, true)).join(''); }
 function renderNodes() { L_nodes.innerHTML = state.nodes.length ? state.nodes.map(n => nodeMarkup(n, false)).join('') : `<text x="${state.board.w / 2}" y="${state.board.h / 2 - 12}" text-anchor="middle" font-size="34" fill="#8a929c">Start your graph</text><text x="${state.board.w / 2}" y="${state.board.h / 2 + 30}" text-anchor="middle" font-size="20" fill="#8a929c">Add a prototype, an In-Between State or a built case from the toolbar, then use Connect to link them.</text>`; }
-function renderLegend() { L_legend.innerHTML = legendMarkup(true); }
+function renderLegend() { L_legend.innerHTML = legendMarkup(true); renderFntable(); }
+function renderFntable() { L_fntable.innerHTML = fntableMarkup(true); }
 function updateNode(id) {
   const n = byId[id], el = L_nodes.querySelector(`[data-id="${id}"]`); if (!n || !el) return renderNodes();
   const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g'); tmp.innerHTML = nodeMarkup(n, false); el.replaceWith(tmp.firstChild);
@@ -523,6 +633,12 @@ function drawOverlay() {
   sel.nodes.forEach(id => { const n = byId[id]; if (n) s += `<circle class="sel" cx="${r1(n.x)}" cy="${r1(n.y)}" r="${n.r + 7}"/>`; });
   if (sel.edge) { const e = state.edges.find(x => x.id === sel.edge), g = e && edgeGeom(e); if (g) s += `<path class="sel-e" d="${pathD(g)}"/>`; }
   if (sel.legend && state.legend.show) s += `<rect class="sel" x="${state.legend.x - 8}" y="${state.legend.y - 50}" width="300" height="726" rx="8"/>`;
+  if (sel.fntable && state.fntable.show) { const b = fntableBox(); s += `<rect class="sel" x="${b.x - 6}" y="${b.y - 6}" width="${b.w + 12}" height="${b.h + 12}" rx="8"/>`; }
+  // a selected function: its links are highlighted in its colour, every other link fades
+  const hs = sel.fn ? edgesUsing(sel.fn, sel.call) : null, f = sel.fn && fnById[sel.fn];
+  if (hs && f) hs.forEach(e => { const g = edgeGeom(e); if (g) s += `<path class="hl" d="${pathD(g)}" style="stroke:${isIntent(f) ? '#111111' : esc(f.color)}"/>`; });
+  const hset = hs && new Set(hs.map(e => e.id));
+  L_edges.querySelectorAll('[data-eg]').forEach(el => { el.style.opacity = hset && !hset.has(el.dataset.eg) ? '.22' : ''; });
   if (connectFrom && byId[connectFrom]) {
     const n = byId[connectFrom]; s += `<circle class="src" cx="${n.x}" cy="${n.y}" r="${n.r + 6}"/>`;
     if (preview) s += `<line class="pre" x1="${n.x}" y1="${n.y}" x2="${r1(preview.x)}" y2="${r1(preview.y)}"/>`;
@@ -534,7 +650,7 @@ function drawOverlay() {
 function renderAll() { reindex(); renderBoard(); renderEdges(); renderNodes(); renderLegend(); drawOverlay(); renderPanel(); }
 
 // ---------- history and dirty state ----------
-const snapshot = () => JSON.stringify({board: state.board, legend: state.legend, opts: state.opts, nodes: state.nodes, edges: state.edges});
+const snapshot = () => JSON.stringify({board: state.board, legend: state.legend, fntable: state.fntable, functions: state.functions, opts: state.opts, nodes: state.nodes, edges: state.edges});
 function pushHistory(snap) { undoS.push(snap); if (undoS.length > 60) undoS.shift(); redoS.length = 0; histUI(); }
 function edit(key, fn) {
   const now = Date.now();
@@ -569,16 +685,62 @@ function capsUI() {
 }
 
 // ---------- selection and panel ----------
-function select(next) { sel = Object.assign({nodes: new Set(), edge: null, legend: false}, next); drawOverlay(); renderPanel(); }
+function select(next) {
+  const fnBefore = sel.fn;
+  sel = Object.assign({nodes: new Set(), edge: null, legend: false, fn: null, call: null, fntable: false}, next);
+  if (fnBefore !== sel.fn) renderFntable();
+  drawOverlay(); renderPanel();
+}
 const panel = $('panel');
 const opt = (v, label, cur) => `<option value="${esc(v)}"${String(v) === String(cur) ? ' selected' : ''}>${esc(label)}</option>`;
-const nodeName = n => n ? `${oneLine(n.t === 'case' ? (n.name || n.label) : n.label) || '(no text)'}` : '?';
+const nodeName = n => n ? `${n.code ? n.code + ' ' : ''}${oneLine(n.t === 'case' ? (n.name || n.label) : n.label) || '(no text)'}` : '?';
 function renderPanel() {
   if (sel.edge) return panelEdge(state.edges.find(e => e.id === sel.edge));
   if (sel.nodes.size === 1) return panelNode(byId[[...sel.nodes][0]]);
   if (sel.nodes.size > 1) return panelMulti();
+  if (sel.fn && fnById[sel.fn]) return panelFn(fnById[sel.fn]);
   if (sel.legend) return panelLegend();
+  if (sel.fntable) return panelFntable();
   panelGraph();
+}
+const ftg = f => `<span class="ftg${isIntent(f) ? ' int' : ''}" style="background:${esc(f.color)}">${esc(f.id)}</span>`;
+// ---------- pipelines as text: each circle written as the function calls that make it from the 2D prototypes ----------
+const ptag = n => n.code || (n.t === 'case' ? 'CASE' : oneLine(n.label).split(' ')[0] || n.id);
+function pipelineSteps(id) {
+  const into = x => state.edges.filter(e => e.b === x && e.k !== 'comb' && byId[e.a]);
+  const anc = new Set([id]), stack = [id];
+  while (stack.length) into(stack.pop()).forEach(e => { if (!anc.has(e.a)) { anc.add(e.a); stack.push(e.a); } });
+  const depth = {}, dep = x => { if (depth[x] !== undefined) return depth[x]; depth[x] = 0; const ins = into(x); depth[x] = ins.length ? 1 + Math.max(...ins.map(e => dep(e.a))) : 0; return depth[x]; };
+  const order = [...anc].sort((a, b) => dep(a) - dep(b) || ptag(byId[a]).localeCompare(ptag(byId[b]), 'en', {numeric: true}));
+  const out = [];
+  order.forEach(x => {
+    const n = byId[x], t = ptag(n), name = n.t === 'case' ? `${n.name || oneLine(n.label)}${n.year ? ', ' + n.year : ''}` : oneLine(n.label);
+    const ins = into(x);
+    if (!ins.length) { out.push({t, name, root: true}); return; }
+    const groups = new Map(); ins.forEach(e => { const k = e.l || '(no command)'; groups.set(k, (groups.get(k) || []).concat(ptag(byId[e.a]))); });
+    let first = true;
+    groups.forEach((from, l) => { out.push({t, name: first ? name : '', expr: l, from, more: !first}); first = false; });
+  });
+  return out;
+}
+const pipelineLines = id => pipelineSteps(id).map(s => s.root ? `${s.t} = ${s.name}   # 2D prototype` : `${s.t} ${s.more ? '+=' : '='} ${s.expr} on ${s.from.join(', ')}${s.name ? `   # ${s.name}` : ''}`);
+const pipelineHTML = id => pipelineSteps(id).map(s => `<div><b>${esc(s.t)}</b> ${s.root ? '= 2D prototype' : `${s.more ? '+=' : '='} ${esc(s.expr)} <span style="color:var(--ink-2)">on ${esc(s.from.join(', '))}</span>`}${s.name ? `<br><span style="color:var(--ink-2);font-family:var(--f-ui)">${esc(s.name)}</span>` : ''}</div>`).join('');
+function pipelinesText() {
+  const L = ['# Knowledge Graph pipelines: 2D prototype → transformations → In-Between States → Materialize → built case', '', `Axes: ${state.functions.axes || ''}`, '', '## Functions'];
+  state.functions.list.forEach(f => {
+    L.push(`${f.id} ${f.sig || f.name}: ${f.def || ''}`);
+    (f.steps || []).forEach((st, i) => L.push(`   ${i + 1}. ${st}`));
+    L.push(`   Grasshopper: ${f.gh || '—'}. Equilibrium: ${f.eqNote || f.eq || '—'}`);
+  });
+  L.push('Materialize: from the last diagram to the built case (material, sections, joints). Not a geometric function.');
+  state.nodes.filter(n => n.t === 'case').sort((a, b) => a.y - b.y).forEach(c => { L.push('', `## ${c.name || oneLine(c.label)}${c.year ? ', ' + c.year : ''}`); L.push(...pipelineLines(c.id)); });
+  const notes = state.edges.filter(e => e.note && byId[e.a] && byId[e.b]);
+  if (notes.length) { L.push('', '## Notes on the links'); notes.forEach(e => L.push(`${ptag(byId[e.a])} → ${ptag(byId[e.b])}: ${e.l ? e.l + '. ' : ''}${e.note}`)); }
+  return L.join('\n') + '\n';
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch (e) { const ta = $('copy-text'); if (ta) { ta.value = text; ta.hidden = false; ta.focus(); ta.select(); toast('Press Ctrl+C or ⌘C to copy the selected text.'); } }
 }
 // ---------- GitHub copy: submit changes as a pull request ----------
 const REPO = (() => { const h = location.hostname.match(/^([^.]+)\.github\.io$/i), seg = location.pathname.split('/').filter(Boolean)[0]; return h && seg ? `${h[1]}/${seg}` : 'Starive/knowledge-graph'; })();
@@ -625,6 +787,14 @@ function panelGraph() {
       <div><dt>Links</dt><dd>${state.edges.length}</dd></div>
     </dl>
   </section>
+  <section class="sec">
+    <h3>Functions</h3>
+    <p class="note">Each transformation link is written as calls to these minimal functions, for example <span class="mono">PolarArray(Z, n=4)</span>; chain steps with →. Links that call the same function carry the same coloured tag, and the same text means the same parameters. Click a function to see its step-by-step definition and highlight its links.</p>
+    <div class="fnlist">${state.functions.list.map(f => { const k = edgesUsing(f.id).length; return `<button data-act="sel-fn" data-id="${esc(f.id)}">${ftg(f)}<span class="sig">${esc(f.sig || f.name)}</span><span class="cnt">${k ? k + (k === 1 ? ' link' : ' links') : '—'}</span></button>`; }).join('')}</div>
+    <label class="chk"><input type="checkbox" id="g-fntable" data-f="g-fntable"${state.fntable.show ? ' checked' : ''}> Show the function table on the board</label>
+    <div class="btnrow"><button data-act="copy-pipes">Copy pipelines for an LLM</button><button data-act="fn-add">Add a function</button></div>
+    <textarea id="copy-text" rows="6" hidden aria-label="Text to copy"></textarea>
+  </section>
   ${tray.length ? `
   <section class="sec">
     <h3>Photos to place (${tray.length})</h3>
@@ -657,7 +827,7 @@ function panelGraph() {
     <ul class="tips">
       <li>Drag a circle to move it. <kbd>Shift</kbd>-click adds circles to the selection; <kbd>Shift</kbd>-drag on empty space draws a selection box.</li>
       <li><b>Connect</b> (<kbd>C</kbd>): click the start circle, then the end circle.</li>
-      <li>Click a link to change its ends, kind, command text, arrowhead or curve.</li>
+      <li>Click a link to change its ends, kind, command, arrowhead or curve. Write the command as function calls, such as <span class="mono">Truncate(tip, t=0.5)</span>.</li>
       <li>Drop an image file onto any circle, or select a circle and paste an image.</li>
       <li><b>Photos…</b> adds many at once: download the photos from your Miro cards into one folder, then select them all. Each file goes to the case named in its file name, including the alternates.</li>
       <li><kbd>Delete</kbd> removes the selection. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Z</kbd> undoes. Arrow keys nudge.</li>
@@ -679,9 +849,17 @@ function panelNode(n) {
     <label class="field">Case name<input type="text" id="n-name" data-f="name" value="${esc(n.name || '')}"></label>
     <label class="field">Year<input type="text" id="n-year" data-f="year" value="${esc(n.year || '')}"></label>
     ${n.meta ? `<p class="meta">${esc(n.meta)}</p>` : ''}` : ''}
-    <label class="field">Text in the circle<textarea id="n-label" data-f="label" rows="3">${esc(n.label || '')}</textarea><span class="note">Each line break starts a new line in the figure.</span></label>
+    ${isCase ? '' : `<label class="field">Code<input type="text" id="n-code" data-f="code" value="${esc(n.code || '')}" placeholder="e.g. P1, SM2"><span class="note">A short name the pipelines use, shown in bold above the name.</span></label>`}
+    <label class="field">${isCase ? 'Text in the circle' : 'Name'}<textarea id="n-label" data-f="label" rows="3">${esc(n.label || '')}</textarea><span class="note">Each line break starts a new line in the figure.</span></label>
+    <label class="field">Notes<textarea id="n-note" data-f="note" rows="3" placeholder="What the diagram shows: loads, supports, which members are in compression or tension">${esc(n.note || '')}</textarea></label>
     <label class="field"><span class="lab">Size <span class="v mono" id="v-r">${n.r}</span></span><input type="range" id="n-r" data-f="r" min="18" max="120" step="1" value="${n.r}"></label>
   </section>
+  ${state.edges.some(e => e.b === n.id && e.k !== 'comb') ? `
+  <section class="sec">
+    <h3>Pipeline from the 2D prototypes</h3>
+    <div class="prog" style="display:flex;flex-direction:column;gap:6px">${pipelineHTML(n.id)}</div>
+    <p class="note">Read from the top: every line makes one circle from the ones after “on”.</p>
+  </section>` : ''}
   <section class="sec">
     <h3>Form and force diagrams</h3>
     <div class="dgrid">${diagramTile(n, 'form')}${diagramTile(n, 'force')}</div>
@@ -690,14 +868,15 @@ function panelNode(n) {
   <section class="sec">
     <h3>Image</h3>
     <div class="imgrow">
-      <div class="thumb">${src ? `<img src="${esc(src)}" alt="">` : 'No image'}</div>
+      <div class="thumb"${src && isContain(n) ? ' style="background:#fff"' : ''}>${src ? `<img src="${esc(src)}" alt=""${isContain(n) ? ' style="object-fit:contain;padding:12px"' : ''}>` : 'No image'}</div>
       <div class="btnrow">
         <label class="btn"><input type="file" id="n-file" data-f="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" hidden>${src ? 'Replace image' : 'Upload image'}</label>
         ${src ? '<button data-act="img-remove">Remove image</button>' : ''}
       </div>
     </div>
     ${src ? `
-    <label class="field"><span class="lab">Photo zoom <span class="v mono" id="v-iz">${(n.img.z || 1).toFixed(2)}</span></span><input type="range" id="n-iz" data-f="iz" min="1" max="4" step="0.02" value="${n.img.z || 1}"></label>
+    <label class="field">Fit<select id="n-ifit" data-f="ifit">${opt('contain', 'Whole image inside the circle', isContain(n) ? 'contain' : 'cover')}${opt('cover', 'Fill the circle (crops the edges)', isContain(n) ? 'contain' : 'cover')}</select></label>
+    <label class="field"><span class="lab">Zoom <span class="v mono" id="v-iz">${(n.img.z || 1).toFixed(2)}</span></span><input type="range" id="n-iz" data-f="iz" min="0.4" max="4" step="0.02" value="${n.img.z || 1}"></label>
     <div class="row2">
       <label class="field">Move left / right<input type="range" id="n-ix" data-f="ix" min="-1.5" max="1.5" step="0.02" value="${n.img.ox || 0}"></label>
       <label class="field">Move up / down<input type="range" id="n-iy" data-f="iy" min="-1.5" max="1.5" step="0.02" value="${n.img.oy || 0}"></label>
@@ -742,7 +921,10 @@ function panelEdge(e) {
   </section>
   <section class="sec">
     <label class="field">Kind<select id="e-k" data-f="ek">${opt('tr', 'Transformation (grey bar)', e.k)}${opt('mat', 'Materialization (black)', e.k)}${opt('comb', 'Combination (thin line)', e.k)}</select></label>
-    <label class="field">Command text<input type="text" id="e-l" data-f="el" value="${esc(e.l || '')}" placeholder="e.g. rotate radial"></label>
+    <label class="field">Command<input type="text" id="e-l" data-f="el" value="${esc(e.l || '')}" placeholder="e.g. PolarArray(Z, n=4)"><span class="note">Write function calls; chain steps with →.</span></label>
+    ${e.k !== 'mat' ? `<div class="field">Functions in this command<div class="chips" id="e-calls">${callChips(e)}</div></div>
+    <label class="field">Add a function<select id="e-ins" data-f="eins"><option value="">Choose…</option>${state.functions.list.map(f => `<option value="${esc(f.id)}">${esc(f.id + '  ' + (f.sig || f.name))}</option>`).join('')}</select></label>` : ''}
+    <label class="field">Why this step, and its parameters<textarea id="e-note" data-f="enote" rows="3" placeholder="e.g. Cut the apex at the midpoints of the two sides…">${esc(e.note || '')}</textarea></label>
     <label class="field">Arrowhead<select id="e-ar" data-f="ear">${opt('none', 'None', e.ar)}${opt('end', 'At the end', e.ar)}${opt('start', 'At the start', e.ar)}${opt('both', 'Both ends', e.ar)}</select></label>
     <label class="field"><span class="lab">Curve <span class="v mono" id="v-bend">${(+e.bend || 0).toFixed(2)}</span></span><input type="range" id="e-bend" data-f="ebend" min="-1" max="1" step="0.02" value="${+e.bend || 0}"></label>
     <label class="field"><span class="lab">Text position along the link <span class="v mono" id="v-lp">${(e.lp ?? .5).toFixed(2)}</span></span><input type="range" id="e-lp" data-f="elp" min="0.08" max="0.92" step="0.01" value="${e.lp ?? .5}"></label>
@@ -751,6 +933,48 @@ function panelEdge(e) {
     <div class="btnrow"><button data-act="sel-node" data-id="${e.a}">Select start circle</button><button data-act="sel-node" data-id="${e.b}">Select end circle</button></div>
     <div class="btnrow"><button class="danger" data-act="del">Delete link</button></div>
   </section>`;
+}
+function callChips(e) {
+  const cs = calls(e.l);
+  if (!cs.length) return '<span class="note">No function from the library yet. Pick one below, or type its name and brackets.</span>';
+  return cs.map(c => { const same = edgesUsing(c.f.id, c.key).length; return `<button data-act="sel-call" data-id="${esc(c.f.id)}" data-k="${esc(c.key)}" title="Highlight every link with this exact call">${ftg(c.f)} <span class="mono">${esc(c.text)}</span>${same > 1 ? ` <small>= ${same} links</small>` : ''}</button>`; }).join('');
+}
+function panelFn(f) {
+  const groups = new Map();
+  edgesUsing(f.id).forEach(e => calls(e.l).forEach(c => { if (c.f.id === f.id) { const g = groups.get(c.key) || {text: c.text, edges: []}; if (!g.edges.includes(e)) g.edges.push(e); groups.set(c.key, g); } }));
+  const total = edgesUsing(f.id).length;
+  panel.innerHTML = `
+  <section class="sec">
+    <div class="kicker">Function ${esc(f.id)} · ${esc(f.group || '')}</div>
+    <h2 id="p-title" style="display:flex;gap:8px;align-items:center">${ftg(f)} ${esc(f.sig || f.name)}</h2>
+    <p class="meta" style="color:var(--ink)">${esc(f.def || '')}</p>
+    ${(f.steps || []).length ? `<ol class="steps">${f.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+    <dl class="stats" style="grid-template-columns:1fr">
+      <div><dt>Grasshopper / Rhino</dt><dd style="font-size:14px;font-weight:500">${esc(f.gh || '—')}</dd></div>
+      <div><dt>Equilibrium</dt><dd style="font-size:14px;font-weight:500">${esc(f.eqNote || f.eq || '—')}</dd></div>
+    </dl>
+  </section>
+  <section class="sec">
+    <h3>Links that call it (${total})</h3>
+    ${groups.size ? [...groups.entries()].map(([k, g]) => `<div class="callgrp"><div class="row" style="justify-content:space-between"><span class="ct">${esc(g.text)}</span><button data-act="sel-call" data-id="${esc(f.id)}" data-k="${esc(k)}"${sel.call === k ? ' aria-pressed="true"' : ''}>${g.edges.length > 1 ? `Same call on ${g.edges.length} links` : 'Highlight'}</button></div><div class="row">${g.edges.map(e => `<button data-act="sel-edge" data-id="${e.id}">${esc(ptag(byId[e.a]))} → ${esc(ptag(byId[e.b]))}</button>`).join('')}</div></div>`).join('') : '<p class="note">No link calls this function yet.</p>'}
+    <div class="btnrow">${sel.call ? `<button data-act="sel-fn" data-id="${esc(f.id)}">Highlight every call of ${esc(f.name)}</button>` : ''}<button data-act="desel">Done</button></div>
+  </section>
+  <section class="sec">
+    <h3>Edit the definition</h3>
+    <div class="row2"><label class="field">Name<input type="text" id="f-name" data-f="fn-name" value="${esc(f.name)}"></label><label class="field">Colour<input type="color" id="f-color" data-f="fn-color" value="${esc(/^#[0-9a-f]{6}$/i.test(f.color) ? f.color : '#666666')}" style="height:34px;padding:2px"></label></div>
+    <label class="field">Signature<input type="text" id="f-sig" data-f="fn-sig" value="${esc(f.sig || '')}"></label>
+    <label class="field">Definition<textarea id="f-def" data-f="fn-def" rows="3">${esc(f.def || '')}</textarea></label>
+    <label class="field">Steps, one per line<textarea id="f-steps" data-f="fn-steps" rows="5">${esc((f.steps || []).join('\n'))}</textarea></label>
+    <label class="field">Grasshopper / Rhino<input type="text" id="f-gh" data-f="fn-gh" value="${esc(f.gh || '')}"></label>
+    <div class="row2"><label class="field">Equilibrium (short)<input type="text" id="f-eq" data-f="fn-eq" value="${esc(f.eq || '')}"></label><span></span></div>
+    <label class="field">Equilibrium (what happens)<textarea id="f-eqn" data-f="fn-eqn" rows="3">${esc(f.eqNote || '')}</textarea></label>
+    <p class="note">Renaming a function also renames it in every link that calls it.</p>
+    <div class="btnrow"><button class="danger" data-act="fn-del"${total ? ' disabled title="Links still call this function"' : ''}>Delete function</button></div>
+  </section>`;
+}
+function panelFntable() {
+  panel.innerHTML = `<section class="sec"><div class="kicker">Function table</div><h2>Function table</h2><p class="note">Drag it to move it. Click a row to open that function. It is drawn in the exported PNG and SVG.</p>
+  <div class="btnrow"><button data-act="hide-fntable">Hide the table</button></div></section>`;
 }
 function panelMulti() {
   panel.innerHTML = `<section class="sec"><div class="kicker">Selection</div><h2>${sel.nodes.size} circles selected</h2>
@@ -769,9 +993,20 @@ function setTitle() { const t = $('p-title'); if (!t) return; const e = curEdge(
 panel.addEventListener('input', ev => {
   const f = ev.target.dataset.f; if (!f) return;
   const v = ev.target.value, n = curNode(), e = curEdge();
+  const fsel = !n && !e && sel.fn ? fnById[sel.fn] : null;
+  if (fsel) {
+    const key = {'fn-sig': 'sig', 'fn-def': 'def', 'fn-gh': 'gh', 'fn-eq': 'eq', 'fn-eqn': 'eqNote', 'fn-color': 'color'}[f];
+    if (key) { edit(f + fsel.id, () => { fsel[key] = v; }); }
+    else if (f === 'fn-steps') edit(f + fsel.id, () => { fsel.steps = v.split('\n').map(x => x.trim()).filter(Boolean); });
+    else return;
+    if (key === 'color' || key === 'sig' || key === 'eq') { renderEdges(); renderFntable(); drawOverlay(); }
+    return;
+  }
   if (n) {
     const id = n.id;
-    if (f === 'name') edit('name' + id, () => { n.name = v; n.label = wrap(v); $('n-label').value = n.label; });
+    if (f === 'code') edit('code' + id, () => { n.code = v.trim(); });
+    else if (f === 'note') { edit('note' + id, () => { n.note = v; }); return; }
+    else if (f === 'name') edit('name' + id, () => { n.name = v; n.label = wrap(v); $('n-label').value = n.label; });
     else if (f === 'year') edit('year' + id, () => { n.year = v; });
     else if (f === 'label') edit('label' + id, () => { n.label = v; });
     else if (f === 'r') { edit('r' + id, () => { n.r = +v; }); $('v-r').textContent = v; renderEdges(); }
@@ -780,7 +1015,8 @@ panel.addEventListener('input', ev => {
     updateNode(id); drawOverlay(); setTitle(); return;
   }
   if (e) {
-    if (f === 'el') edit('el' + e.id, () => { e.l = v; });
+    if (f === 'el') { edit('el' + e.id, () => { e.l = v; }); const c = $('e-calls'); if (c) c.innerHTML = callChips(e); renderFntable(); }
+    else if (f === 'enote') { edit('enote' + e.id, () => { e.note = v; }); return; }
     else if (f === 'ebend') { edit('bend' + e.id, () => { e.bend = +v; }); $('v-bend').textContent = (+v).toFixed(2); }
     else if (f === 'elp') { edit('lp' + e.id, () => { e.lp = +v; }); $('v-lp').textContent = (+v).toFixed(2); }
     else return;
@@ -792,8 +1028,21 @@ panel.addEventListener('change', ev => {
   const t = ev.target, v = t.value, n = curNode(), e = curEdge();
   if (f === 'tray') { if (v) placeTray(t.dataset.pid, v); return; }
   if (f === 'file') { const file = t.files && t.files[0]; t.value = ''; if (file && n) setNodeImage(n.id, file); return; }
+  const fsel = !n && !e && sel.fn ? fnById[sel.fn] : null;
+  if (fsel && f === 'fn-name') {
+    const nv = v.trim(), old = fsel.name;
+    if (!/^[A-Za-z][A-Za-z0-9]*$/.test(nv)) { toast('Use letters and digits only, starting with a letter.'); renderPanel(); return; }
+    if (nv.toLowerCase() !== old.toLowerCase() && fnByName[nv.toLowerCase()]) { toast(`There is already a function called ${nv}.`); renderPanel(); return; }
+    const re = new RegExp('\\b' + old.replace(/[^A-Za-z0-9]/g, '') + '(\\s*\\()', 'gi');
+    edit(null, () => { fsel.name = nv; if (fsel.sig) fsel.sig = fsel.sig.replace(new RegExp('^' + old.replace(/[^A-Za-z0-9]/g, '')), nv); state.edges.forEach(x => { if (x.l) x.l = x.l.replace(re, nv + '$1'); }); });
+    reindex(); renderEdges(); renderFntable(); drawOverlay(); renderPanel(); return;
+  }
   if (n) {
     if (f === 't') edit(null, () => { n.t = v; if (v === 'case') { n.name = n.name || oneLine(n.label); n.alts = n.alts || []; } });
+    else if (f === 'ifit') {
+      edit(null, () => { if (v === 'contain') n.img.fit = 'contain'; else delete n.img.fit; n.img.z = 1; n.img.ox = 0; n.img.oy = 0; });
+      if (v === 'contain' && !(n.img.ar > 0)) imageAR(imgSrc(n)).then(ar => { if (ar && byId[n.id] && n.img) { n.img.ar = ar; updateNode(n.id); markDirty(); } });
+    }
     else if (f === 'glyph') edit(null, () => { n.glyph = v; });
     else if (f === 'cap') edit(null, () => { n.cap = t.checked; });
     else return;
@@ -803,13 +1052,22 @@ panel.addEventListener('change', ev => {
     if (f === 'ea' || f === 'eb') {
       const other = f === 'ea' ? e.b : e.a;
       if (v === other) { toast('A link needs two different circles.'); renderPanel(); return; }
-      edit(null, () => { e[f === 'ea' ? 'a' : 'b'] = v; });
+      edit(null, () => { e[f === 'ea' ? 'a' : 'b'] = v; }); renderNodes();
     } else if (f === 'ek') edit(null, () => { if (v === 'mat' && (!e.l || e.l === 'command')) e.l = 'Materialize'; if (v !== 'mat' && e.l === 'Materialize') e.l = v === 'comb' ? '' : 'command'; e.k = v; });
     else if (f === 'ear') edit(null, () => { e.ar = v; });
+    else if (f === 'eins') {
+      const fn = fnById[v]; if (!fn) return;
+      const call = fn.name + '()';
+      edit(null, () => { const cur = (e.l || '').trim(); e.l = !cur || cur === 'command' ? call : cur + ' → ' + call; });
+      renderEdges(); drawOverlay(); renderFntable(); renderPanel();
+      const inp = $('e-l'); if (inp) { inp.focus(); const p = inp.value.length - 1; inp.setSelectionRange(p, p); }
+      return;
+    }
     else return;
     renderEdges(); drawOverlay(); renderPanel(); return;
   }
-  if (f === 'g-captions') { edit(null, () => { state.opts.captions = t.checked; }); renderNodes(); drawOverlay(); }
+  if (f === 'g-fntable') { edit(null, () => { state.fntable.show = t.checked; }); renderFntable(); drawOverlay(); }
+  else if (f === 'g-captions') { edit(null, () => { state.opts.captions = t.checked; }); renderNodes(); drawOverlay(); }
   else if (f === 'g-legend') { edit(null, () => { state.legend.show = t.checked; }); renderLegend(); }
   else if (f === 'g-snap') edit(null, () => { state.opts.snap = t.checked; });
   else if (f === 'g-png') edit(null, () => { state.opts.pngScale = +v; });
@@ -840,6 +1098,7 @@ function deleteSelection() {
   if (sel.edge) { const id = sel.edge; edit(null, () => { state.edges = state.edges.filter(e => e.id !== id); }); sel.edge = null; }
   else if (sel.nodes.size) { const ids = new Set(sel.nodes); edit(null, () => { state.nodes = state.nodes.filter(n => !ids.has(n.id)); state.edges = state.edges.filter(e => !ids.has(e.a) && !ids.has(e.b)); }); sel.nodes = new Set(); }
   else if (sel.legend) { edit(null, () => { state.legend.show = false; }); sel.legend = false; }
+  else if (sel.fntable) { edit(null, () => { state.fntable.show = false; }); sel.fntable = false; }
   else return;
   renderAll(); toast('Deleted. Undo with Ctrl+Z or ⌘Z.');
 }
@@ -850,14 +1109,15 @@ function setMode(m) {
 }
 function contentBounds() {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  state.nodes.forEach(n => { const below = (n.t === 'case' && n.img && state.opts.captions) || (n.t === 'ib' && n.cap) || (['orig', 'core', 'adj'].includes(n.t) && n.img) ? 52 : 0; x0 = Math.min(x0, n.x - n.r); y0 = Math.min(y0, n.y - n.r); x1 = Math.max(x1, n.x + n.r); y1 = Math.max(y1, n.y + n.r + below); });
+  state.nodes.forEach(n => { const below = (n.t === 'case' && n.img && state.opts.captions) || (n.t === 'ib' && n.cap) || (['orig', 'core', 'adj'].includes(n.t) && n.img) ? 64 : 0; x0 = Math.min(x0, n.x - n.r); y0 = Math.min(y0, n.y - n.r); x1 = Math.max(x1, n.x + n.r); y1 = Math.max(y1, n.y + n.r + below); });
   if (state.legend.show) { x0 = Math.min(x0, state.legend.x - 4); y0 = Math.min(y0, state.legend.y - 46); x1 = Math.max(x1, state.legend.x + 292); y1 = Math.max(y1, state.legend.y + 672); }
+  if (state.fntable.show) { const b = fntableBox(); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
   return {x0, y0, x1, y1};
 }
 function fitBoard() {
   if (!state.nodes.length) return;
   const b = contentBounds(), m = 50, dx = Math.round(m - b.x0), dy = Math.round(m - b.y0);
-  edit(null, () => { state.nodes.forEach(n => { n.x += dx; n.y += dy; }); state.legend.x += dx; state.legend.y += dy; state.board.w = Math.ceil(b.x1 - b.x0 + 2 * m); state.board.h = Math.ceil(b.y1 - b.y0 + 2 * m); });
+  edit(null, () => { state.nodes.forEach(n => { n.x += dx; n.y += dy; }); state.legend.x += dx; state.legend.y += dy; state.fntable.x += dx; state.fntable.y += dy; state.board.w = Math.ceil(b.x1 - b.x0 + 2 * m); state.board.h = Math.ceil(b.y1 - b.y0 + 2 * m); });
   renderAll(); fit();
 }
 function swapAlt(i) {
@@ -906,6 +1166,24 @@ document.getElementById('root').addEventListener('click', ev => {
     case 'draw': if (n) openBoard(n, b.dataset.which); break;
     case 'copyparent': if (n) { const par = parentOf(n), w = b.dataset.which; if (par) { edit(null, () => { n[w] = clone(par.node[w]); n[w].check = null; }); openBoard(n, w); } } break;
     case 'hide-legend': edit(null, () => { state.legend.show = false; }); renderLegend(); select({}); break;
+    case 'hide-fntable': edit(null, () => { state.fntable.show = false; }); renderFntable(); select({}); break;
+    case 'sel-fn': select({fn: b.dataset.id}); break;
+    case 'sel-call': select({fn: b.dataset.id, call: b.dataset.k}); break;
+    case 'desel': select({}); break;
+    case 'copy-pipes': copyText(pipelinesText(), 'Copied the function library and every pipeline as text.'); break;
+    case 'fn-add': {
+      let k = state.functions.list.length + 1; while (fnById['F' + k]) k++;
+      let nm = 'NewFunction', j = 2; while (fnByName[nm.toLowerCase()]) nm = 'NewFunction' + j++;
+      const f = {id: 'F' + k, name: nm, sig: nm + '()', color: '#5f6b7a', group: 'Added', def: '', steps: [], gh: '', eq: 're-check', eqNote: ''};
+      edit(null, () => { state.functions.list.push(f); }); reindex(); renderFntable(); select({fn: f.id});
+      const inp = $('f-name'); if (inp) { inp.focus(); inp.select(); }
+      break;
+    }
+    case 'fn-del': {
+      const f = sel.fn && fnById[sel.fn]; if (!f || edgesUsing(f.id).length) break;
+      edit(null, () => { state.functions.list = state.functions.list.filter(x => x !== f); }); reindex(); renderFntable(); select({}); toast(`Deleted ${f.name}. Undo with Ctrl+Z or ⌘Z.`);
+      break;
+    }
   }
 });
 $('f-import').addEventListener('change', async ev => {
@@ -919,6 +1197,8 @@ $('f-import').addEventListener('change', async ev => {
       state.nodes = d.nodes; state.edges = d.edges;
       state.board = d.board || state.board; state.legend = d.legend || state.legend;
       state.opts = Object.assign({}, state.opts, d.opts || {});
+      if (d.functions && Array.isArray(d.functions.list)) state.functions = d.functions;
+      if (d.fntable) state.fntable = d.fntable;
     });
     select({}); renderAll(); fit(); toast(`Loaded ${d.nodes.length} circles and ${d.edges.length} links.`);
   } catch (err) { toast('That file is not a graph exported from this editor.'); }
@@ -928,7 +1208,7 @@ $('f-import').addEventListener('change', async ev => {
 cv.addEventListener('pointerdown', ev => {
   if (ev.pointerType === 'mouse' && ev.button !== 0 && ev.button !== 1) return;
   const p = toWorld(ev);
-  const nodeEl = ev.target.closest('.nd'), edgeEl = ev.target.closest('[data-e]'), legEl = ev.target.closest('[data-legend]');
+  const nodeEl = ev.target.closest('.nd'), edgeEl = ev.target.closest('[data-e]'), legEl = ev.target.closest('[data-legend]'), ftEl = ev.target.closest('[data-fntable]');
   try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
   if (ev.button === 1 || (mode === 'connect' && !nodeEl)) { drag = {type: 'pan', sx: ev.clientX, sy: ev.clientY, cx: cam.x, cy: cam.y, moved: false}; return; }
   if (mode === 'connect') {
@@ -949,6 +1229,9 @@ cv.addEventListener('pointerdown', ev => {
   } else if (legEl) {
     select({legend: true});
     drag = {type: 'legend', start: p, ox: state.legend.x, oy: state.legend.y, moved: false, before: snapshot()};
+  } else if (ftEl) {
+    const row = ev.target.closest('[data-fn]');
+    drag = {type: 'fntable', start: p, ox: state.fntable.x, oy: state.fntable.y, moved: false, before: snapshot(), fn: row ? row.dataset.fn : null};
   } else if (ev.shiftKey) {
     drag = {type: 'marquee', start: p, cur: p};
   } else {
@@ -975,12 +1258,16 @@ cv.addEventListener('pointermove', ev => {
     moveNodeEls(drag.orig.map(o => o.id)); renderEdges(); drawOverlay();
   } else if (drag.type === 'legend') {
     state.legend.x = snap(drag.ox + dx); state.legend.y = snap(drag.oy + dy); renderLegend(); drawOverlay();
+  } else if (drag.type === 'fntable') {
+    if (!sel.fntable) select({fntable: true});
+    state.fntable.x = snap(drag.ox + dx); state.fntable.y = snap(drag.oy + dy); renderFntable(); drawOverlay();
   }
 });
 function endDrag() {
   if (!drag) return;
   const d = drag; drag = null; cv.classList.remove('panning');
-  if ((d.type === 'nodes' || d.type === 'legend') && d.moved) { pushHistory(d.before); lastKey = null; markDirty(); if (d.type === 'nodes') renderNodes(); }
+  if ((d.type === 'nodes' || d.type === 'legend' || d.type === 'fntable') && d.moved) { pushHistory(d.before); lastKey = null; markDirty(); if (d.type === 'nodes') renderNodes(); }
+  else if (d.type === 'fntable') select(d.fn ? {fn: d.fn} : {fntable: true});
   else if (d.type === 'pan' && !d.moved && mode === 'select') select({});
   else if (d.type === 'marquee') {
     const x0 = Math.min(d.start.x, d.cur.x), x1 = Math.max(d.start.x, d.cur.x), y0 = Math.min(d.start.y, d.cur.y), y1 = Math.max(d.start.y, d.cur.y);
@@ -1012,16 +1299,26 @@ document.addEventListener('keydown', ev => {
   else if (ev.key === 'c' || ev.key === 'C') setMode(mode === 'connect' ? 'select' : 'connect');
   else if (ev.key === 'v' || ev.key === 'V') setMode('select');
   else if (ev.key === 'f' || ev.key === 'F') fit();
-  else if (ev.key.startsWith('Arrow') && (sel.nodes.size || sel.legend)) {
+  else if (ev.key.startsWith('Arrow') && (sel.nodes.size || sel.legend || sel.fntable)) {
     ev.preventDefault();
     const st = ev.shiftKey ? 10 : 1, dx = ev.key === 'ArrowLeft' ? -st : ev.key === 'ArrowRight' ? st : 0, dy = ev.key === 'ArrowUp' ? -st : ev.key === 'ArrowDown' ? st : 0;
-    edit('nudge', () => { sel.nodes.forEach(id => { byId[id].x += dx; byId[id].y += dy; }); if (sel.legend) { state.legend.x += dx; state.legend.y += dy; } });
+    edit('nudge', () => { sel.nodes.forEach(id => { byId[id].x += dx; byId[id].y += dy; }); if (sel.legend) { state.legend.x += dx; state.legend.y += dy; } if (sel.fntable) { state.fntable.x += dx; state.fntable.y += dy; } });
     moveNodeEls([...sel.nodes]); renderEdges(); renderLegend(); drawOverlay();
   }
 });
 
 // ---------- images: upload, drop, paste ----------
 const toDataURL = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+// width / height of an image file or URL (0 when it cannot be read)
+async function imageAR(x) {
+  const r3 = v => Math.round(v * 1000) / 1000;
+  if (x instanceof Blob && x.type !== 'image/svg+xml') { try { const b = await createImageBitmap(x); return r3(b.width / b.height); } catch (e) { /* try below */ } }
+  try {
+    const u = x instanceof Blob ? URL.createObjectURL(x) : x, im = new Image(); im.src = u; await im.decode();
+    if (x instanceof Blob) URL.revokeObjectURL(u);
+    return im.naturalWidth && im.naturalHeight ? r3(im.naturalWidth / im.naturalHeight) : 0;
+  } catch (e) { return 0; }
+}
 async function prepImage(file, max) {
   if (file.type === 'image/svg+xml') { if (file.size > 2e6) throw new Error('svg-large'); return file; }
   if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) throw new Error('type');
@@ -1049,7 +1346,9 @@ async function setNodeImage(id, file) {
     statusUI(); toast(err && err.message === 'large' ? 'That image is too large to store. Try a smaller one.' : err && err.message === 'type' ? 'Use a PNG, JPG, WebP, GIF or SVG image.' : err && err.message === 'svg-large' ? 'SVG images must be under 2 MB.' : 'This image could not be read. Try saving it as PNG or JPG first.'); return;
   }
   const n = byId[id]; if (!n) { statusUI(); return; }
-  edit(null, () => { n.img = Object.assign({z: 1, ox: 0, oy: 0}, img); });
+  const ar = await imageAR(file);
+  // sketches show whole inside the circle; photos of built cases fill it
+  edit(null, () => { n.img = Object.assign({z: 1, ox: 0, oy: 0}, n.t === 'case' ? {} : {fit: 'contain'}, ar ? {ar} : {}, img); });
   updateNode(id); drawOverlay(); statusUI();
   if (curNode() && curNode().id === id) renderPanel();
   toast(`Image placed in “${nodeName(n)}”.`);
@@ -1149,7 +1448,7 @@ async function inlineImages() {
 async function buildSVG() {
   const {out, failed} = await inlineImages();
   const W = state.board.w, H = state.board.h;
-  const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><style>${figCSS('')}</style>${MARKERS}</defs><rect width="${W}" height="${H}" fill="#ffffff"/><g id="links">${state.edges.map(e => edgeMarkup(e, false)).join('')}</g><g id="nodes">${state.nodes.map(n => nodeMarkup(n, true, n.img ? out[n.id] : null)).join('')}</g>${legendMarkup(false)}</svg>`;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><style>${figCSS('')}</style>${MARKERS}</defs><rect width="${W}" height="${H}" fill="#ffffff"/><g id="links">${state.edges.map(e => edgeMarkup(e, false)).join('')}</g><g id="nodes">${state.nodes.map(n => nodeMarkup(n, true, n.img ? out[n.id] : null)).join('')}</g>${legendMarkup(false)}${fntableMarkup(false)}</svg>`;
   if (failed) toast(`${failed} image${failed > 1 ? 's' : ''} could not be included in the export.`);
   return svg;
 }
@@ -1272,7 +1571,6 @@ function solveDiagram(d) {
 // ---------- form and force diagrams on circles ----------
 const COL = {c: '#2f6fd6', t: '#c8323a', u: '#8a929c', l: '#22a05a'};
 const LS = 60;
-const clone = o => JSON.parse(JSON.stringify(o));
 const emptyDiagram = () => ({nodes: [], members: [], loads: [], img: null, check: null});
 const imSrc = im => im ? (im.asset ? '/_blob/' + im.asset : im.src) : null;
 const safeSrc = s => (s && (s.startsWith('data:image/') || s.startsWith('/_blob/') || s.startsWith('blob:'))) ? s : '';
@@ -1647,9 +1945,8 @@ async function loadRepoGraph() {
   if (!g || !Array.isArray(g.nodes) || !Array.isArray(g.edges)) return;
   baseKey = 'repo:' + (g.savedAt || ''); let next = g, rest = false;
   try { const d = JSON.parse(localStorage.getItem(DKEY) || 'null'); if (d && d.base === baseKey && d.state && Array.isArray(d.state.nodes)) { next = d.state; rest = true; } } catch (e) { /* no draft */ }
-  state = next; state.opts = Object.assign({captions: true, snap: false, pngScale: 2, arrow: 'none'}, state.opts || {});
-  state.legend = state.legend || {x: 1905, y: 330, show: true}; state.board = state.board || {w: 2180, h: 1460};
-  dirty = rest; undoS.length = 0; redoS.length = 0; histUI(); sel = {nodes: new Set(), edge: null, legend: false};
+  state = normalize(next);
+  dirty = rest; undoS.length = 0; redoS.length = 0; histUI(); sel = {nodes: new Set(), edge: null, legend: false, fn: null, call: null, fntable: false};
   renderAll(); fit(); statusUI();
   if (rest) toast('Restored your unsaved edits from this browser.');
 }

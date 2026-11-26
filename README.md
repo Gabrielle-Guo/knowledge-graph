@@ -13,7 +13,9 @@ An editable version of the knowledge graph from RGC proposal 27628327, *Form-Fin
 | Path | What it is |
 |---|---|
 | `index.html` | The graph editor: drag circles, change links and commands, swap cases, export PNG, SVG or JSON |
-| `knowledge-graph.html` | A blank knowledge graph to build yourself, with a drawing board for each circle's form and force diagram |
+| `knowledge-graph.html` | Your own knowledge graph, with a drawing board for each circle's form and force diagram and a function library for the links |
+| `knowledge-graph.json` | The graph that page opens: circles, links, images and the function library |
+| `FUNCTIONS.md` | The function library and every pipeline as plain text |
 | `photos/sources.json` | Where each case's photo comes from: the Miro board's chosen Commons file, or a Commons search |
 | `scripts/fetch_photos.py` | Downloads the photos (run by GitHub Actions) |
 | `photos/manifest.json` | Written by the script; the editor reads it to fill the photo rings |
@@ -44,4 +46,6 @@ The working copy is the Claude version of the lab, which saves every change. To 
 
 **Open it:** https://gabrielle-guo.github.io/knowledge-graph/knowledge-graph.html
 
-The same buttons as the graph editor, starting with no circles. Add prototypes, In-Between States and built cases, connect them, and add photos. Select any circle and click **Draw** to draft its form and force diagram, with blue for compression, red for tension and green for loads, then check its equilibrium. To share a version here, use **Submit to GitHub**; it is saved as `knowledge-graph.json`.
+The same buttons as the graph editor. It now holds seven pipelines that start from four 2D triangles (P1–P4) and end at seven built cases. Select any circle and click **Draw** to draft its form and force diagram, with blue for compression, red for tension and green for loads, then check its equilibrium. To share a version here, use **Submit to GitHub**; it is saved as `knowledge-graph.json`.
+
+Every transformation link is written as calls to a small function library (Divide, Move, Truncate, Branch, Extend, Remove, Connect, Scale, Rotate, Mirror, FlipLoad, Array, PolarArray, Superpose, and Intent for steps driven by architectural intent). Links that call the same function carry the same coloured tag, and the same call text means the same parameters. Click a function in the side panel to see its step-by-step definition and highlight its links. [`FUNCTIONS.md`](FUNCTIONS.md) lists the library and each case's pipeline as plain text an LLM can read.
