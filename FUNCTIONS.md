@@ -118,7 +118,7 @@ P2 = FlipLoad() on P1   # Triangular tent
 HS1 = Extend(tip, −Z, to ground) on P2   # Umbrella
 MI1 = Divide(base, n=?) → Connect(mast, base nodes) on HS1   # Cable fan
 MI2 = Extend(mast, −Z, d=?) on MI1   # Tall pylon
-MI3 = Array(X, n=7) on MI2   # Seven pylons [diagram to draw]
+MI3 = Array(X, n=7) on MI2   # Seven pylons
 CASE = Materialize on MI3   # Millau Viaduct, 2004
 
 ## Khudi Bari, 2020
