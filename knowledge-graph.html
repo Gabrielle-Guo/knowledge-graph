@@ -316,6 +316,8 @@ const argParts = a => a.split(/[,;]/).map(s => s.trim()).filter(Boolean);
 const NAMED = /^([^=≈<>]+?)\s*([=≈])\s*(.*)$/;
 function template(f, args) {
   if (isIntent(f)) return `${f.name}(${args.includes(':') ? args.split(':')[0].trim() : '…'})`;
+  // Superpose: the diagrams it combines are its inputs, not parameters; its template is the way they are put together
+  if (String(f.name).toLowerCase() === 'superpose') { const mode = args.includes(';') ? args.split(';').slice(1).join(';').trim() : ''; return `${f.name}(${mode})`; }
   return `${f.name}(${argParts(args).map(a => { const m = a.match(NAMED); if (m) return m[1]; return /^[−\-+±]?\s*[\d.]+\s*°?$|^\?$/.test(a) ? '#' : a; }).join(', ')})`;
 }
 function calls(l) {
@@ -899,6 +901,7 @@ function panelNode(n) {
     <label class="field">${isCase ? 'Text in the circle' : 'Name'}<textarea id="n-label" data-f="label" rows="3">${esc(n.label || '')}</textarea><span class="note">Each line break starts a new line in the figure.</span></label>
     <label class="field">Notes<textarea id="n-note" data-f="note" rows="3" placeholder="What the diagram shows: loads, supports, which members are in compression or tension">${esc(n.note || '')}</textarea></label>
     <label class="field"><span class="lab">Size <span class="v mono" id="v-r">${n.r}</span></span><input type="range" id="n-r" data-f="r" min="18" max="120" step="1" value="${n.r}"></label>
+    <label class="field">Name position<select id="n-cap" data-f="capPos">${opt('', 'Automatic (away from links)', n.capPos || '')}${opt('below', 'Below', n.capPos || '')}${opt('above', 'Above', n.capPos || '')}${opt('left', 'Left', n.capPos || '')}${opt('right', 'Right', n.capPos || '')}</select></label>
   </section>
   ${state.edges.some(e => e.b === n.id && e.k !== 'comb') ? `
   <section class="sec">
@@ -1106,6 +1109,7 @@ panel.addEventListener('change', ev => {
       if (v === 'contain' && !(n.img.ar > 0)) imageAR(imgSrc(n)).then(ar => { if (ar && byId[n.id] && n.img) { n.img.ar = ar; updateNode(n.id); markDirty(); } });
     }
     else if (f === 'glyph') edit(null, () => { n.glyph = v; });
+    else if (f === 'capPos') edit(null, () => { if (v) n.capPos = v; else delete n.capPos; });
     else if (f === 'cap') edit(null, () => { n.cap = t.checked; });
     else return;
     updateNode(n.id); renderEdges(); drawOverlay(); renderPanel(); return;
